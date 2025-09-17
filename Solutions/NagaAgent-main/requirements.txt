@@ -1,0 +1,84 @@
+# 核心依赖 (按setup.ps1安装顺序)
+nagaagent-core>=1.0.0
+mcp>=1.6.0
+openai>=1.76.0
+openai-agents>=0.0.13
+python-dotenv>=1.1.0
+requests>=2.32.3
+aiohttp>=3.11.18
+pytz>=2024.1
+colorama>=0.4.6
+python-dateutil>=2.9.0.post0
+
+# GRAG知识图谱相关依赖
+py2neo>=2021.2.3
+pyvis>=0.3.2
+matplotlib>=3.10.0
+
+# API服务器相关依赖
+flask-cors>=6.0.1
+flask>=3.1.0
+gevent>=25.5.1
+fastapi>=0.115.0
+
+# 网络通信相关依赖
+uvicorn[standard]>=0.34.0
+librosa
+websockets>=14.0
+
+# AI机器学习相关依赖
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0,<3.0.0
+scipy>=1.15.2
+transformers>=4.51.3
+
+# 数据处理相关依赖
+pydantic>=2.11.3
+pydantic-settings>=2.9.1
+httpx>=0.28.1
+typing-extensions>=4.13.2
+
+# GUI界面相关依赖
+pyqt5==5.15.11
+playwright>=1.52.0
+greenlet>=3.2.1
+pyee>=13.0.0
+pygame>=2.6.0
+html2text>=2020.1.16
+
+# 音频处理相关依赖
+sounddevice>=0.4.6
+pyaudio>=0.2.14
+edge-tts>=7.0.2
+emoji>=2.8.0
+
+# 系统托盘相关依赖
+pystray>=0.19.4
+pillow>=10.0.0
+
+# 系统控制相关依赖
+screen-brightness-control
+pycaw
+comtypes
+
+# MCP工具相关依赖
+jmcomic>=2.6.5
+fastmcp>=2.11.2
+
+# MQTT通信相关依赖
+paho-mqtt>=2.0.0
+
+# 其他工具依赖
+tiktoken
+python-docx>=1.2.0
+
+# Live2D相关依赖
+live2d-py>=0.5.4
+pyopengl>=3.1.10
+toml>=0.10.2
+opensimplex>=0.4.5.1
+
+# 搜索工具依赖
+langchain-community>=0.3.29
+crawl4ai
+onnxruntime

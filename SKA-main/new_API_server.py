@@ -1,7 +1,6 @@
 import httpx
 import asyncio
 import requests
-import time
 import json
 
 class QQHttpServer():
@@ -21,6 +20,8 @@ class QQHttpServer():
                     if line.startswith("data:"):
                         self.recive_data = line.split("data:", 1)[1]
                         
+                        
+
     async def send_text(self):
         requests.post(self.l2Bot_api+self.send_mode, json={
         'group_id': self.target_id['id'],
@@ -49,28 +50,7 @@ class QQHttpServer():
         # 使用 json.dumps 美化输出，按键排序，缩进为 4 空格
         #formatted = json.dumps(data, ensure_ascii=False, indent=4, sort_keys=True)
 
-
-
-async def test_ollama_api():
-    json = format_message_str(data)
-    time.sleep(0.75)
-    text=json["raw_message"]
-    LLM_response = await ollama_one_shot(text)
-    await send_text(LLM_response)
-
-async def ollama_one_shot(text):
-    # 生成文本
-    response = requests.post(
-        "http://192.168.30.13:11434/api/generate",
-        json={
-            "model": "qwen3:30b-a3b-instruct-2507-q4_K_M",
-            "prompt": f"{text}",
-            "stream": False
-        }
-    )
-    print(response.json())
-    return response.json()['response']
-
 if __name__ == "__main__":
     QQServer = QQHttpServer()
+    QQServer.
     print("L2Bot langched")
