@@ -2,7 +2,6 @@ import httpx
 import asyncio
 import requests
 import json
-from core import 
 
 class QQHttpServer():
     def __init__(self) -> None:
@@ -20,15 +19,17 @@ class QQHttpServer():
                 async for line in resp.aiter_lines():
                     if line.startswith("data:"):
                         self.recive_data = line.split("data:", 1)[1]
-                        slot_triger()
+                        print(self.recive_data)
                         
-    async def send_text(self):
+                        
+
+    async def send_text(self, text):
         requests.post(self.l2Bot_api+self.send_mode, json={
         'group_id': self.target_id['id'],
         'message': [{
             'type': 'text',
             'data': {
-                'text': f'{self.msg}'
+                'text': f'{text}'
             }
         }]
     })
