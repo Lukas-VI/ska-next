@@ -23,7 +23,7 @@ import time as t
 
 #ccc={'type': 'face', 'data': {'id': '311'}}, {'type': 'face', 'data': {'id': '311'}}, {'type': 'face', 'data': {'id': '311'}}
 #初始化敏感词库
-sensitive_words = ["暴力", "色情","资本","走资","修正",]
+sensitive_words = ["暴力", "资本","走资","修正",]
 time=t.asctime()
 
 
