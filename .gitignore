@@ -3,10 +3,11 @@ bin-debug/
 bin-release/
 [Oo]bj/
 [Bb]in/
-Solutions/
+
 
 # Other files and folders
 .settings/
+Solutions/
 
 # Executables
 *.swf

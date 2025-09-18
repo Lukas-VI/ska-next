@@ -52,7 +52,7 @@ class CoreOutput(IOPack):
     基本的输出数据包,原始数据来自模型生成内容, 记录了SKA / 程序逻辑选择的操作与目标
     '''
     def __init__(self, pack) -> None:
-        super().__init__(pack, self.type)
+        super().__init__(pack, 'output')
         self.target = ''
 
     def normalize(self):
@@ -65,6 +65,7 @@ class CoreOutput(IOPack):
                 self.content = self.pack.get('response', '')
                 self.time = self.pack.get('created_at', time.time())
                 self.type = 'ollama_response'
+                
             else:
                 # 处理其他字典格式
                 self.time = self.pack.get('time', time.time())

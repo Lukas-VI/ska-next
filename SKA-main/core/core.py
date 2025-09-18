@@ -7,6 +7,8 @@ from server.MCP.MCP import MCP
 
 from .IO_Package import CoreInput, CoreOutput
 
+from events import QQnewMsg, Scheduler
+
 class Core():
     '''
     机器人的核心服务
@@ -15,7 +17,6 @@ class Core():
         
         self.beat_count = 0 #存活心跳记录
         self.bpm = 1
-        self.even_flag = 0
 
         self.Input = ''
         self.Outpit = ''
@@ -25,6 +26,9 @@ class Core():
         self.QQServer = QQHttpServer()
         self.MCPServer = MCP()
 
+        #实例化事件监听
+        self.qq_event = QQnewMsg(self.QQServer)
+        self.scheduler_event = Scheduler()
 
     async def services_epoch(self):
         '''
@@ -44,13 +48,13 @@ class Core():
         '''
         input = CoreInput(self.QQServer.recive_data)
         output = CoreOutput(await self.Agent_API.ollama_one_shot(input.content))
-        await self.QQServer.send_text(output.content)        
+        await self.QQServer.send_text(output.content)
 
     async def heart_beat(self):
         '''
         服务主循环
 
-        static beat:    固定时间 / 时间触发 
+        static beat:    周期触发 
         
         trigger beat:   监听处理事件触发    
 
@@ -58,30 +62,38 @@ class Core():
         '''
         while True:
             while True:
-                
-                await asyncio.sleep(10)
-                if self.msg_triger():
+                await asyncio.sleep(1)
+                if self.event_lisener() == 1:
+                    print('事件触发')
                     break
-                print('[]')
+                print("lisenering")
+
+            await Core.services_epoch(self)
+            print("start_services")
 
             time.sleep(60 / self.bpm)
             self.beat_count += 1
             print(f'[{self.beat_count}]')
 
-            await Core.services_epoch(self)
-            
+    def event_lisener(self):
+        '''
+        事件监听
+        '''
 
-    def msg_triger(self):
+        print(self.qq_event)
+        if self.qq_event:
+            return 1
+        else:
+            return 0
+
+
+    async def msg_trigger(self):
         '''
         聊天信号触发
         '''
         if self.even_flag:
             self.even_flag = 0
             return 1
-        
-        elif self.scheduler():
-            return 1
-        
         else:
             return 0
 
@@ -90,21 +102,16 @@ class Core():
         全局服务路由
 
         用于选择合适的toolchain
+
+        计划使用Qwen Agent
         '''
 
     def manage(self):
         '''
         资源与API查询/管理/调度
-        '''
 
-    def scheduler(self):
+        将转入工具
         '''
-        日程调度
-
-        应该写成一个新的事件类
-        '''
-
-        return 0
 
 
 if __name__ == "__main__":
