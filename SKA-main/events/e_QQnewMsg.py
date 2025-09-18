@@ -1,4 +1,4 @@
-from event import Event
+from .event import Event
 from server import QQHttpServer
 
 class QQnewMsg(Event):

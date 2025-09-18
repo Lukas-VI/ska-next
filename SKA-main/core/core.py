@@ -7,7 +7,8 @@ from server.MCP.MCP import MCP
 
 from .IO_Package import CoreInput, CoreOutput
 
-from events import QQnewMsg, Scheduler
+from events.e_QQnewMsg import QQnewMsg
+from events.e_Scheduler import Scheduler
 
 class Core():
     '''

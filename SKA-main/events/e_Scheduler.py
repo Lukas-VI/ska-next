@@ -1,6 +1,7 @@
 import time
 
 from .event import Event
+
 class Scheduler(Event):
     def __init__(self) -> None:
         self.flag = 0
