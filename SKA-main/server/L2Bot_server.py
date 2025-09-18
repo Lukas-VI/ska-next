@@ -1,6 +1,5 @@
 import httpx
 import asyncio
-import requests
 import json
 
 class QQHttpServer():
@@ -13,8 +12,9 @@ class QQHttpServer():
         #self.json : dict
         self.buffer = []
         asyncio.run(self.get_data())
+        self.is_connected = False
 
-    async def get_data(self):
+    '''    async def get_data(self):
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream('GET', self.l2Bot_api+'_events') as resp:
                 async for line in resp.aiter_lines():
@@ -22,18 +22,60 @@ class QQHttpServer():
                         #self.recive_data = line.split("data:", 1)[1]
 
                         self.format_message_str(line.split("data:", 1)[1])
-                        
+    '''
+    async def get_data(self):
+        """
+        异步获取数据，包含重试机制
+        """
+        retry_count = 0
+        max_retries = 5
+        retry_delay = 5  # 重试间隔（秒）
+        
+        while retry_count < max_retries:
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    async with client.stream('GET', self.l2Bot_api+'_events') as resp:
+                        self.is_connected = True
+                        retry_count = 0  # 连接成功，重置重试计数
+                        async for line in resp.aiter_lines():
+                            if line.startswith("data:"):
+                                self.format_message_str(line.split("data:", 1)[1])
+            except httpx.ConnectError as e:
+                self.is_connected = False
+                retry_count += 1
+                print(f"连接失败 ({retry_count}/{max_retries}): {str(e)}")
+                if retry_count < max_retries:
+                    for _ in reversed(range(1, retry_delay + 1)):
+                        print("\r" + f"将在 {_} 秒后重试...", end='')
+                        await asyncio.sleep(1)
+                    print("\r" + "connecting...         ")
+                else:
+                    print("达到最大重试次数，无法连接")
+                    break
+            except Exception as e:
+                self.is_connected = False
+                print(f"发生未预期的错误: {str(e)}")
+                if retry_count < max_retries:
+                    await asyncio.sleep(retry_delay)
+                    retry_count += 1
+                else:
+                    break                    
 
     async def send_text(self, text):
-        requests.post(self.l2Bot_api+self.send_mode, json={
-        'group_id': self.target_id['id'],
-        'message': [{
-            'type': 'text',
-            'data': {
-                'text': f'{text}'
-            }
-        }]
-    })
+        try:
+            # 使用异步方式发送消息
+            async with httpx.AsyncClient() as client:
+                await client.post(self.l2Bot_api+self.send_mode, json={
+                    'group_id': self.target_id['id'],
+                    'message': [{
+                                'type': 'text',
+                                'data': {
+                                'text': f'{text}'
+                        }
+                    }]
+                })
+        except Exception as e:
+            print(f"发送消息失败: {str(e)}")
 
     def format_message_str(self, input_str):
         """
@@ -52,18 +94,20 @@ class QQHttpServer():
         print(formatted)
     
     def detact_new_msg(self):
-        if not self.buffer:
-            self.buffer[0] = self.recive_data
-            self.buffer[1] = self.recive_data
-        else:
-            self.buffer[1] = self.buffer[0]
-            self.buffer[0] = self.recive_data
-        if self.buffer[0] != self.buffer[1]:
-            return True
-        else:
+        try:
+            if not self.buffer:
+                self.buffer = [self.recive_data, self.recive_data]
+            else:
+                self.buffer[1] = self.buffer[0]
+                self.buffer[0] = self.recive_data
+            if self.buffer[0] != self.buffer[1]:
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"检测新消息时出错: {str(e)}")
             return False
 
 
 if __name__ == "__main__":
     QQServer = QQHttpServer()
-    print("L2Bot langched")
