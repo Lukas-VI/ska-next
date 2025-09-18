@@ -1,11 +1,13 @@
 import time
+import json
+
 
 class IOPack():
     '''
     与SKA交互的标准数据包的基类
     '''
     def __init__(self, pack, type) -> None:
-        self.time = time.time
+        self.time = time.time()
         self.pack = pack
         self.type = type
         self.user = ''
@@ -31,8 +33,66 @@ class CoreInput(IOPack):
     '''
 
     def __init__(self, pack) -> None:
-        super().__init__(pack, self.type)
         self.source = ''
+        self.pack_type = 'unknown'
+        self.pack_source = 'unknown'
+        self.is_valid = False
+        self.detect_pack_info(pack)
+        super().__init__(pack, self.pack_type)
+
+    def detect_pack_info(self, pack):
+        '''
+        检测输入数据包的结构和来源
+        
+        Args:
+            pack: 输入的数据包，可能是字符串或字典
+        '''
+        # 如果pack是字符串，先尝试解析
+        if isinstance(pack, str):
+            try:
+                data = json.loads(pack)
+                self.is_valid = True
+                self.pack_type = 'json'
+                
+                # 根据JSON字段判断来源
+                if isinstance(data, dict):
+                    # 判断是否来自QQ消息
+                    if all(key in data for key in ['post_type', 'message_type', 'raw_message']):
+                        self.pack_source = 'qq_message'
+                        self.pack_type = 'qq_json'
+                    # 判断是否来自Ollama API
+                    elif 'response' in data:
+                        self.pack_source = 'ollama_response'
+                        self.pack_type = 'ollama_json'
+                    # 判断是否来自心跳包或其他系统事件
+                    elif 'event' in data or 'type' in data:
+                        self.pack_source = 'system_event'
+                        self.pack_type = 'event_json'
+                    else:
+                        self.pack_source = 'unknown_json'
+                        
+            except json.JSONDecodeError:
+                # 不是有效的JSON格式，判断为纯文本
+                self.pack_type = 'text'
+                self.pack_source = 'text_input'
+                self.is_valid = True
+        elif isinstance(pack, dict):
+            self.is_valid = True
+            self.pack_type = 'dict'
+            
+            # 根据字典中的字段判断来源
+            if all(key in pack for key in ['post_type', 'message_type', 'raw_message']):
+                self.pack_source = 'qq_message'
+            elif 'response' in pack:
+                self.pack_source = 'ollama_response'
+            elif 'event' in pack or 'type' in pack:
+                self.pack_source = 'system_event'
+            else:
+                self.pack_source = 'unknown_dict'
+        else:
+            self.pack_type = 'unknown'
+            self.pack_source = 'unknown'
+            self.is_valid = False
 
     def normalize(self):
         '''
@@ -44,8 +104,27 @@ class CoreInput(IOPack):
             self.user = self.pack.get('user_id', '')
             self.content = self.pack.get('raw_message', '')
             self.source = self.pack.get('message_type', '')
+        elif isinstance(self.pack, str):
+            # 如果是字符串，尝试解析为JSON
+            try:
+                data = json.loads(self.pack)
+                if isinstance(data, dict):
+                    self.time = data.get('time', '')
+                    self.type = data.get('message_type', '') + '_' + data.get('post_type', '')
+                    self.user = data.get('user_id', '')
+                    self.content = data.get('raw_message', '')
+                    self.source = data.get('message_type', '')
+                else:
+                    # 纯文本内容
+                    self.content = self.pack
+                    self.type = 'text'
+            except json.JSONDecodeError:
+                # 无法解析为JSON的纯文本
+                self.content = self.pack
+                self.type = 'text'
         return self
 
+    
 
 class CoreOutput(IOPack):
     '''
@@ -78,9 +157,6 @@ class CoreOutput(IOPack):
             self.content = self.pack
             self.type = 'text'
         return self
-
-
-
 
 class ExpandOutput(CoreOutput):
     '''

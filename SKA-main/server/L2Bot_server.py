@@ -90,7 +90,7 @@ class QQHttpServer():
         self.recive_data = json.loads(input_str)
         
         # 使用 json.dumps 美化输出，按键排序，缩进为 4 空格
-        formatted = json.dumps(input_str, ensure_ascii=False, indent=4, sort_keys=True)
+        formatted = json.dumps(self.recive_data, ensure_ascii=False, indent=4, sort_keys=True)
         print(formatted)
     
     def detact_new_msg(self):
