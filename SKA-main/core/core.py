@@ -28,9 +28,9 @@ class Core():
 
     async def services_epoch(self):
         '''
-        定义本交互(思考)轮次内进行的操作
+        定义本交互(思考)轮次内进行的操作,业务流程
 
-        如: 收到心跳消息包 -> LLM推理 -> 选择操作: 回复/记忆/等待/执行
+        如: 收到心跳消息包 -> Agent推理 -> 选择操作: 回复/记忆/等待/执行
         
         '''
         #基础功能收发
@@ -39,6 +39,8 @@ class Core():
     async def basic_toolchain(self):
         '''
         最基础的消息收发逻辑
+
+        未来将集成到工具类进行解耦
         '''
         input = CoreInput(self.QQServer.recive_data)
         output = CoreOutput(await self.Agent_API.ollama_one_shot(input.content))
@@ -55,11 +57,17 @@ class Core():
         实际上就是使用两个频率不同的嵌套无限循环,实现对所有事件的监听
         '''
         while True:
-            
-            while self.msg_triger():
+            while True:
+                
                 await asyncio.sleep(10)
+                if self.msg_triger():
+                    break
+                print('[]')
 
             time.sleep(60 / self.bpm)
+            self.beat_count += 1
+            print(f'[{self.beat_count}]')
+
             await Core.services_epoch(self)
             
 

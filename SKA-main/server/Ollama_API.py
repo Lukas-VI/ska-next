@@ -15,4 +15,4 @@ class OllamaAPI():
                 "stream": False
             }
         )
-        return response.json()['response']
+        return response.json()

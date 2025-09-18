@@ -1,0 +1,24 @@
+{
+    "self_id":3863601489,
+    "user_id":1029797287,
+    "time":1758175623,
+    "message_id":1515607212,
+    "message_seq":5537,
+    "message_type":"group",
+    "sender":{"user_id":1029797287,
+                "nickname":"LUKAS",
+                "card":"用户名",
+                "role":"admin",
+                "title":""
+            },
+    "raw_message":"。",
+    "font":14,
+    "sub_type":"normal",
+    "message":[{"type":"text",
+                "data":{"text":"。"}
+            }],
+    "message_format":"array",
+    "post_type":"message",
+    "group_id":965244857,
+    "group_name":"测试群"
+}
