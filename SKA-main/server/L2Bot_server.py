@@ -5,12 +5,13 @@ import json
 
 class QQHttpServer():
     def __init__(self) -> None:
-        self.l2Bot_api = 'http://localhost:3000/_events'
+        self.l2Bot_api = 'http://localhost:3000/'
         self.recive_data = ''
         self.msg = ''
         self.target_id = {'msg_type':'group', 'id':965244857}
         self.send_mode = 'send_group_msg'
         self.json : dict
+        self.buffer = []
         asyncio.run(self.get_data())
 
     async def get_data(self):
@@ -20,7 +21,7 @@ class QQHttpServer():
                     if line.startswith("data:"):
                         self.recive_data = line.split("data:", 1)[1]
                         print(self.recive_data)
-                        
+
                         
 
     async def send_text(self, text):

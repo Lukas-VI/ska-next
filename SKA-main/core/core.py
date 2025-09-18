@@ -1,10 +1,11 @@
 import time
+import asyncio
 
 from server.Ollama_API import OllamaAPI
 from server.L2Bot_server import QQHttpServer
 from server.MCP.MCP import MCP
 
-from IO_Package import CoreInput, CoreOutput
+from .IO_Package import CoreInput, CoreOutput
 
 class Core():
     '''
@@ -55,16 +56,26 @@ class Core():
         '''
         while True:
             
+            while self.msg_triger():
+                await asyncio.sleep(10)
 
             time.sleep(60 / self.bpm)
             await Core.services_epoch(self)
             
 
-    def slot_triger(self):
+    def msg_triger(self):
         '''
-        全局信号触发
+        聊天信号触发
         '''
-        if self.even_flag
+        if self.even_flag:
+            self.even_flag = 0
+            return 1
+        
+        elif self.scheduler():
+            return 1
+        
+        else:
+            return 0
 
     def chain_router(self):
         '''
@@ -84,6 +95,8 @@ class Core():
 
         应该写成一个新的事件类
         '''
+
+        return 0
 
 
 if __name__ == "__main__":
