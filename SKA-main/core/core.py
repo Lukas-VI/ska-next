@@ -71,11 +71,12 @@ class Core():
         print("Core Start")
         while True:
             while True:
-                print("lisenering")
-                await asyncio.sleep(1)
+                print("lisenering: ",self.event_lisener())
+                
                 if self.event_lisener() == 1:
                     print('事件触发')
                     break
+                await asyncio.sleep(1)  
 
             await Core.services_epoch(self)
             print("start_services")
@@ -89,23 +90,25 @@ class Core():
         事件监听
         '''
 
-        print("Event Code: ", self.qq_event.flag)
-        if self.qq_event.flag == 1:
+        print("Event Code: ", int(self.qq_event))
+        if int(self.qq_event) == 1:
             return 1
         else:
             return 0
 
 
+        '''    
     async def msg_trigger(self):
         '''
-        聊天信号触发
+        #聊天信号触发
         '''
         if self.even_flag:
             self.even_flag = 0
             return 1
         else:
             return 0
-
+    '''
+        
     def chain_router(self):
         '''
         全局服务路由

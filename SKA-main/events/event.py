@@ -2,7 +2,7 @@ class Event:
     '''
     所有自定义事件类的基类
     '''
-    def __init__(self) -> None:
+    def __init__(self):
         self.name = "BaseEvent"
         self.flag = 0
         self.data = ''

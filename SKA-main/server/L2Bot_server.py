@@ -54,6 +54,7 @@ class QQHttpServer():
                         async for line in resp.aiter_lines():
                             if line.startswith("data:"):
                                 self.format_message_str(line.split("data:", 1)[1])
+                                
             except httpx.ConnectError as e:
                 self.is_connected = False
                 retry_count += 1
