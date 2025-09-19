@@ -33,9 +33,7 @@ class Core():
         self.MCPServer = MCP()
 
         #实例化事件监听
-        self.qq_event = QQnewMsg(self.QQServer)
-        # 设置QQ事件的asyncio.Event
-        self.qq_event.set_async_event(self.event)
+        self.qq_event = QQnewMsg(self.QQServer, self.event)
         self.scheduler_event = Scheduler()
         
         # 注册信号处理器
@@ -59,6 +57,7 @@ class Core():
         """
         # 启动QQ服务器
         await self.QQServer.start()
+        # 事件监听任务已在QQnewMsg初始化时自动启动
         print("所有服务已启动")
 
     async def services_epoch(self):
@@ -120,7 +119,7 @@ class Core():
                 # 此处可添加机器人主动行为逻辑
                 # 例如：await self.autonomous_action()
         
-        print("Core shutdown")
+        print("核心服务已停止")
     
     async def autonomous_action(self):
         """机器人主动行为示例"""
