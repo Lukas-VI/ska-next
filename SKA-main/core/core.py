@@ -1,5 +1,6 @@
-import time
+import sys
 import asyncio
+import signal
 
 from server.Ollama_API import OllamaAPI
 from server.L2Bot_server import QQHttpServer
@@ -22,6 +23,10 @@ class Core():
         self.Input = ''
         self.Outpit = ''
         
+        self.task = None
+        self.event = asyncio.Event()  # 异步事件对象
+        self.should_exit = False  # 退出标志
+
         #实例化sub服务
         self.Agent_API = OllamaAPI()
         self.QQServer = QQHttpServer()
@@ -29,7 +34,25 @@ class Core():
 
         #实例化事件监听
         self.qq_event = QQnewMsg(self.QQServer)
+        # 设置QQ事件的asyncio.Event
+        self.qq_event.set_async_event(self.event)
         self.scheduler_event = Scheduler()
+        
+        # 注册信号处理器
+        self._setup_signal_handlers()
+    
+    def _setup_signal_handlers(self):
+        """设置信号处理器以优雅地处理退出信号"""
+        def signal_handler(signum, frame):
+            print(f"\n接收到信号 {signum}，正在准备退出...")
+            self.should_exit = True
+            # 触发事件以确保任何等待的协程能够继续执行并检测到退出
+            self.event.set()
+            
+        # 注册SIGINT (Ctrl+C) 和 SIGTERM信号处理器
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+    
     async def start(self):
         """
         启动所有异步(网络)服务
@@ -54,60 +77,65 @@ class Core():
 
         未来将集成到工具类进行解耦
         '''
+        # 获取当前函数名作为task值
+        self.task = sys._getframe().f_code.co_name
         input = CoreInput(self.QQServer.recive_data)
         output = CoreOutput(await self.Agent_API.ollama_one_shot(input.content))
         await self.QQServer.send_text(output.content)
+        self.task = None
 
     async def heart_beat(self):
         '''
-        服务主循环
-
-        static beat:    周期触发 
-        
-        trigger beat:   监听处理事件触发    
-
-        实际上就是使用两个频率不同的嵌套无限循环,实现对所有事件的监听
+        重构服务主循环 - 采用事件驱动架构
+        优势：
+        1. 使用原生asyncio.Event实现高效事件通知（避免轮询）
+        2. 心跳与事件监听完全解耦
+        3. 支持真正的并行处理
+        4. 代码逻辑更清晰简洁
         '''
         print("Core Start")
-        while True:
-            while True:
-                print("lisenering: ",self.event_lisener())
+        while not self.should_exit:
+            # 并发等待：事件触发 或 心跳周期完成
+            try:
+                # 等待事件触发（带心跳超时）
+                await asyncio.wait_for(
+                    self.event.wait(), 
+                    timeout=60 / self.bpm
+                )
+                # 重置事件
+                self.event.clear()
                 
-                if self.event_lisener() == 1:
-                    print('事件触发')
+                # 检查是否需要退出
+                if self.should_exit:
                     break
-                await asyncio.sleep(1)  
-
-            await Core.services_epoch(self)
-            print("start_services")
-
-            time.sleep(60 / self.bpm)
-            self.beat_count += 1
-            print(f'[{self.beat_count}]')
+                    
+                print('事件触发')
+                await self.services_epoch()
+                print("start_services")
+                
+            except asyncio.TimeoutError:
+                # 心跳周期完成
+                self.beat_count += 1
+                print(f'[{self.beat_count}] 心跳触发')
+                # 此处可添加机器人主动行为逻辑
+                # 例如：await self.autonomous_action()
+        
+        print("Core shutdown")
+    
+    async def autonomous_action(self):
+        """机器人主动行为示例"""
+        # 实现自主活动逻辑，如：
+        # - 定时发送提醒
+        # - 主动查询信息
+        # - 与其他服务交互
+        pass
 
     def event_lisener(self):
         '''
         事件监听
         '''
-
-        print("Event Code: ", int(self.qq_event))
-        if int(self.qq_event) == 1:
-            return 1
-        else:
-            return 0
-
-
-        '''    
-    async def msg_trigger(self):
-        '''
-        #聊天信号触发
-        '''
-        if self.even_flag:
-            self.even_flag = 0
-            return 1
-        else:
-            return 0
-    '''
+        # 直接返回事件标志
+        return int(self.qq_event)
         
     def chain_router(self):
         '''

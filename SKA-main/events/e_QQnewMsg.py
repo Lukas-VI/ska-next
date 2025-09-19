@@ -13,9 +13,12 @@ class QQnewMsg(Event):
         else:
             self.qq_server = QQHttpServer()
             print("异常！请检查QQHttpServer是否正常启动")
+    
     def slot(self):
         if self.qq_server.detact_new_msg():
             self.flag = 1
-
+            # 如果设置了asyncio.Event，则触发它
+            if self.async_event is not None:
+                self.async_event.set()
         else:
             self.flag = 0
