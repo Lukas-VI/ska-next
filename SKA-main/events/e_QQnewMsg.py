@@ -16,3 +16,5 @@ class QQnewMsg(Event):
     def slot(self):
         if self.qq_server.detact_new_msg():
             self.flag = 1
+        elif self.qq_server.status == 1:
+            self.flag = 2

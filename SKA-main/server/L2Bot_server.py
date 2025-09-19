@@ -6,13 +6,14 @@ class QQHttpServer():
     def __init__(self) -> None:
         self.l2Bot_api = 'http://localhost:3000/'
         self.recive_data = dict
-        self.msg = ''
+        self.status = 0
         self.target_id = {'msg_type':'group', 'id':965244857}
         self.send_mode = 'send_group_msg'
         #self.json : dict
         self.buffer = []
-        asyncio.run(self.get_data())
+        # asyncio.run(self.get_data())
         self.is_connected = False
+        self.data_task = None  # 用于保存数据接收任务的引用
 
     '''    async def get_data(self):
         async with httpx.AsyncClient(timeout=None) as client:
@@ -23,9 +24,22 @@ class QQHttpServer():
 
                         self.format_message_str(line.split("data:", 1)[1])
     '''
+    async def start(self):
+        """
+        启动QQ服务器数据接收任务
+        这个方法应该在有事件循环的上下文中调用
+        """
+        if self.data_task is None or self.data_task.done():
+            self.data_task = asyncio.create_task(self.get_data())
+            print("QQ服务器数据接收任务已启动")
+            return self.data_task
+        else:
+            print("QQ服务器数据接收任务已在运行中")
+            return self.data_task
+    
     async def get_data(self):
         """
-        异步获取数据，包含重试机制
+        异步获取数据
         """
         retry_count = 0
         max_retries = 5
@@ -51,10 +65,11 @@ class QQHttpServer():
                     print("\r" + "connecting...         ")
                 else:
                     print("达到最大重试次数，无法连接")
+                    self.status = 404
                     break
             except Exception as e:
                 self.is_connected = False
-                print(f"发生未预期的错误: {str(e)}")
+                print(f"L2Bot: 发生未预期的错误: {str(e)}")
                 if retry_count < max_retries:
                     await asyncio.sleep(retry_delay)
                     retry_count += 1

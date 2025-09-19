@@ -2,7 +2,15 @@ import asyncio
 
 from core.core import Core
 
-if __name__ == "__main__":
-    # server
+async def main():
+    # 创建核心实例
     app = Core()
-    asyncio.run(app.heart_beat())
+    
+    # 启动所有服务
+    await app.start()
+    
+    # 运行主循环
+    await app.heart_beat()
+
+if __name__ == "__main__":
+    asyncio.run(main())

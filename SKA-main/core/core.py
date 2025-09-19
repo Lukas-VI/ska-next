@@ -30,6 +30,13 @@ class Core():
         #实例化事件监听
         self.qq_event = QQnewMsg(self.QQServer)
         self.scheduler_event = Scheduler()
+    async def start(self):
+        """
+        启动所有异步(网络)服务
+        """
+        # 启动QQ服务器
+        await self.QQServer.start()
+        print("所有服务已启动")
 
     async def services_epoch(self):
         '''
@@ -61,13 +68,14 @@ class Core():
 
         实际上就是使用两个频率不同的嵌套无限循环,实现对所有事件的监听
         '''
+        print("Core Start")
         while True:
             while True:
+                print("lisenering")
                 await asyncio.sleep(1)
                 if self.event_lisener() == 1:
                     print('事件触发')
                     break
-                print("lisenering")
 
             await Core.services_epoch(self)
             print("start_services")
@@ -81,8 +89,8 @@ class Core():
         事件监听
         '''
 
-        print(self.qq_event)
-        if self.qq_event:
+        print("Event Code: ", self.qq_event.flag)
+        if self.qq_event.flag == 1:
             return 1
         else:
             return 0
