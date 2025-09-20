@@ -14,8 +14,9 @@ class IOPack():
         self.content = ''
         self.normalize()
 
+
     def __del__(self):
-        print("Class instance destroyed")
+        print("Class instance destroyed：", self.__class__.__name__)
 
     def normalize(self):
         '''
@@ -32,13 +33,14 @@ class CoreInput(IOPack):
     数据可以来自: QQ消息, 心跳唤醒, 服务事件等
     '''
 
-    def __init__(self, pack) -> None:
+    def __init__(self, pack, type) -> None:
+        super().__init__(pack, type)
         self.source = ''
         self.pack_type = 'unknown'
         self.pack_source = 'unknown'
         self.is_valid = False
         self.detect_pack_info(pack)
-        super().__init__(pack, self.pack_type)
+        self.normalize()
 
     def detect_pack_info(self, pack):
         '''
@@ -130,8 +132,8 @@ class CoreOutput(IOPack):
     '''
     基本的输出数据包,原始数据来自模型生成内容, 记录了SKA / 程序逻辑选择的操作与目标
     '''
-    def __init__(self, pack) -> None:
-        super().__init__(pack, 'output')
+    def __init__(self, pack, type) -> None:
+        super().__init__(pack, type)
         self.target = ''
 
     def normalize(self):

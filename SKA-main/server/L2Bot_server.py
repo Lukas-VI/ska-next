@@ -109,6 +109,7 @@ class QQHttpServer():
         formatted = json.dumps(self.recive_data, ensure_ascii=False, indent=4, sort_keys=True)
         print(formatted)
     
+    '''    
     def detact_new_msg(self):
         try:
             if not self.buffer:
@@ -123,7 +124,7 @@ class QQHttpServer():
         except Exception as e:
             print(f"检测新消息时出错: {str(e)}")
             return False
-
+    '''
 
 if __name__ == "__main__":
     QQServer = QQHttpServer()

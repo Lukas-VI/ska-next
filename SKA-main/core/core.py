@@ -42,7 +42,7 @@ class Core():
     def _setup_signal_handlers(self):
         """设置信号处理器以优雅地处理退出信号"""
         def signal_handler(signum, frame):
-            print(f"\n接收到信号 {signum}，正在准备退出...")
+            print(f"\n[{signum}]，正在准备退出...")
             self.should_exit = True
             # 触发事件以确保任何等待的协程能够继续执行并检测到退出
             self.event.set()
@@ -68,6 +68,7 @@ class Core():
         
         '''
         #基础功能收发
+        print("start_services")
         await self.basic_toolchain()
 
     async def basic_toolchain(self):
@@ -78,8 +79,9 @@ class Core():
         '''
         # 获取当前函数名作为task值
         self.task = sys._getframe().f_code.co_name
-        input = CoreInput(self.QQServer.recive_data)
-        output = CoreOutput(await self.Agent_API.ollama_one_shot(input.content))
+        print(f"task: [{self.task}]")
+        input = CoreInput(self.QQServer.recive_data, "qq_json")
+        output = CoreOutput(await self.Agent_API.ollama_one_shot(input.content), "ollama_json")
         await self.QQServer.send_text(output.content)
         self.task = None
 
@@ -101,6 +103,7 @@ class Core():
                     self.event.wait(), 
                     timeout=60 / self.bpm
                 )
+                print('事件触发')                
                 # 重置事件
                 self.event.clear()
                 
@@ -108,9 +111,8 @@ class Core():
                 if self.should_exit:
                     break
                     
-                print('事件触发')
                 await self.services_epoch()
-                print("start_services")
+                
                 
             except asyncio.TimeoutError:
                 # 心跳周期完成
