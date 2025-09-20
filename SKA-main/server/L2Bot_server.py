@@ -70,7 +70,8 @@ class QQHttpServer():
                     break
             except Exception as e:
                 self.is_connected = False
-                print(f"L2Bot: 发生未预期的错误: {str(e)}")
+                if str(e) != '':
+                    print(f"L2Bot: 发生未预期的错误: {str(e)}")
                 if retry_count < max_retries:
                     await asyncio.sleep(retry_delay)
                     retry_count += 1

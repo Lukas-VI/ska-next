@@ -2,7 +2,7 @@ import sys
 import asyncio
 import signal
 
-from server.Ollama_API import OllamaAPI
+from server.LLM.Ollama_API import OllamaAPI
 from server.L2Bot_server import QQHttpServer
 from server.MCP.MCP import MCP
 
@@ -81,10 +81,24 @@ class Core():
         self.task = sys._getframe().f_code.co_name
         print(f"task: [{self.task}]")
         input = CoreInput(self.QQServer.recive_data, "qq_json")
-        output = CoreOutput(await self.Agent_API.ollama_one_shot(input.content), "ollama_json")
+        output = CoreOutput(await self.Agent_API.ollama_generate(input.content), "ollama_json")
         await self.QQServer.send_text(output.content)
         self.task = None
 
+    async def agent_basic_toolchain(self):
+        '''
+        最基础的消息收发逻辑
+
+        未来将集成到工具类进行解耦
+        '''
+        
+        # 获取当前函数名作为task值
+        self.task = sys._getframe().f_code.co_name
+        print(f"task: [{self.task}]")
+        input = CoreInput(self.QQServer.recive_data, "qq_json")
+        output = CoreOutput(await self.Agent_API.ollama_generate(input.content), "ollama_json")
+        await self.QQServer.send_text(output.content)
+        self.task = None
     async def heart_beat(self):
         '''
         重构服务主循环 - 采用事件驱动架构
