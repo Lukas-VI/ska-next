@@ -7,12 +7,35 @@ from qwen_agent.utils.output_beautify import typewriter_print
 
 
 def init_agent_service():
+    # llm_cfg = {
+    #     # Use the model service provided by DashScope:
+    #     'model': 'qwen3-235b-a22b',
+    #     'model_type': 'qwen_dashscope',
+
+    #     # 'generate_cfg': {
+    #     #     # When using the Dash Scope API, pass the parameter of whether to enable thinking mode in this way
+    #     #     'enable_thinking': False,
+    #     # },
+    # }
+    # llm_cfg = {
+    #     # Use the OpenAI-compatible model service provided by DashScope:
+    #     'model': 'qwen3-235b-a22b',
+    #     'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    #     'api_key': os.getenv('DASHSCOPE_API_KEY'),
+    #
+    #     # 'generate_cfg': {
+    #     #     # When using Dash Scope OAI API, pass the parameter of whether to enable thinking mode in this way
+    #     #     'extra_body': {
+    #     #         'enable_thinking': False
+    #     #     },
+    #     # },
+    # }
     llm_cfg = {
         # Use your own model service compatible with OpenAI API by vLLM/SGLang:
         'model': 'qwen3:30b-a3b-instruct-2507-q4_K_M',
-        'model_server': 'http://localhost:8000/v1',  # api_base
+        'model_server': 'http://192.168.30.13:11434/v1',  # api_base
         'api_key': 'EMPTY',
-
+    
         'generate_cfg': {
             # When using vLLM/SGLang OAI API, pass the parameter of whether to enable thinking mode in this way
             'extra_body': {
@@ -25,6 +48,7 @@ def init_agent_service():
             # 'thought_in_content': True,
         },
     }
+  
     tools = [
         {
             'mcpServers': {  # You can specify the MCP configuration file
@@ -40,9 +64,11 @@ def init_agent_service():
         },
         'code_interpreter',  # Built-in tools
     ]
+
+    tools = []
     bot = Assistant(llm=llm_cfg,
                     function_list=tools,
-                    name='SKA Demo',
+                    name='Qwen3 Tool-calling Demo',
                     description="I'm a demo using the Qwen3 tool calling. Welcome to add and play with your own tools!")
 
     return bot
