@@ -1,5 +1,6 @@
 import time
 import json
+import os
 
 
 class IOPack():
@@ -31,6 +32,8 @@ class CoreInput(IOPack):
     作为SKA的输入数据包
     
     数据可以来自: QQ消息, 心跳唤醒, 服务事件等
+
+    source：消息来源
     '''
 
     def __init__(self, pack, type) -> None:
@@ -39,6 +42,7 @@ class CoreInput(IOPack):
         self.pack_type = 'unknown'
         self.pack_source = 'unknown'
         self.is_valid = False
+
         self.detect_pack_info(pack)
         self.normalize()
 
@@ -162,5 +166,57 @@ class CoreOutput(IOPack):
 
 class ExpandOutput(CoreOutput):
     '''
-    扩增的输出操作,在需要调用工具等时使用
+    扩增的输出操作,在需要调用工具等时使用,现在看来是用不上了
     '''
+
+
+def test():
+    '''
+    测试CoreInput和CoreOutput类的功能
+    '''
+    # 确保在正确的目录下
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    misc_dir = os.path.join(project_root, 'misc')
+    qq_msg_path = os.path.join(misc_dir, 'QQmsg_example.ini')
+    
+    # 读取QQ消息示例
+    with open(qq_msg_path, 'r', encoding='utf-8') as f:
+        qq_msg_str = f.read()
+    
+    # 测试CoreInput类
+    print("=== 测试CoreInput类 ===")
+    input_obj = CoreInput(qq_msg_str, "qq_json")
+    
+    print(f"原始数据包: {input_obj.pack}")
+    print(f"数据包类型: {input_obj.pack_type}")
+    print(f"数据包来源: {input_obj.pack_source}")
+    print(f"是否有效: {input_obj.is_valid}")
+    print(f"时间: {input_obj.time}")
+    print(f"类型: {input_obj.type}")
+    print(f"用户: {input_obj.user}")
+    print(f"内容: {input_obj.content}")
+    print(f"来源: {input_obj.source}")
+    
+    # 测试CoreOutput类
+    print("\n=== 测试CoreOutput类 ===")
+    output_data = {
+        "response": "这是测试回复",
+        "created_at": "2025-09-16T16:17:30.1028138Z"
+    }
+    output_obj = CoreOutput(output_data, "ollama_json")
+    
+    print(f"原始数据包: {output_obj.pack}")
+    print(f"时间: {output_obj.time}")
+    print(f"类型: {output_obj.type}")
+    print(f"内容: {output_obj.content}")
+    print(f"目标: {output_obj.target}")
+    
+    # 测试文本输出
+    print("\n=== 测试文本输出 ===")
+    text_output = CoreOutput("纯文本回复", "text")
+    print(f"类型: {text_output.type}")
+    print(f"内容: {text_output.content}")
+
+if __name__ == "__main__":
+    test()

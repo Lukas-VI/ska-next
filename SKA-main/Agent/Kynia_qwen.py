@@ -1,6 +1,5 @@
 """SKA的qwen-agaent实现"""
 import os  # noqa
-import json
 
 from qwen_agent.agents import Assistant
 from qwen_agent.gui import WebUI

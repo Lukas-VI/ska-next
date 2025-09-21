@@ -1,7 +1,7 @@
 import sys
 import asyncio
 import signal
-import json
+import json  # noqa: F401
 
 from server.LLM.Ollama_API import OllamaAPI
 from server.L2Bot_server import QQHttpServer
@@ -32,6 +32,7 @@ class Core():
 
         self.Input = ''
         self.Outpit = ''
+        self.messages = []
         
         self.task = None
         self.event = asyncio.Event()  # 异步事件对象
@@ -121,6 +122,31 @@ class Core():
         await self.QQServer.send_text(output.content)
         self.task = None
 
+    def msg_construct(self, input: CoreInput):
+        """
+        添加一条信息来自input
+        
+        Args:
+            input: CoreInput对象，包含输入的消息数据
+        """
+        # 如果messages为空，添加系统提示
+        if not self.messages:
+            # 检查是否有加载的提示词模板
+            if hasattr(self, 'prompt_template') and self.prompt_template:
+                self.messages.append({
+                    'role': 'system', 
+                    'content': self.prompt_template
+                })
+        
+        # 添加用户消息
+        if input.source : 
+            self.messages.append({
+                'role': 'user',
+                'content': input.content if hasattr(input, 'content') else str(input)
+            })
+
+
+    
     async def qwen_agent_toolchain(self):
         '''
         使用Qwen Agent的消息处理逻辑
@@ -135,12 +161,12 @@ class Core():
                 # 从QQ服务器获取消息内容
                 input_msg = CoreInput(self.QQServer.recive_data, "qq_json")
                 # 构造符合Qwen Agent要求的消息格式
-                messages = [{'role': 'user', 'content': input_msg.content}]
+                self.msg_construct(input_msg)
                 
                 # 使用Qwen Agent处理消息
                 response_plain_text = ''
                 # 转换消息格式以符合Qwen Agent的要求
-                for response in self.qwen_agent.run(messages=list(messages)):
+                for response in self.qwen_agent.run(messages=list(self.messages)):
                     # 获取最后一次响应作为结果
                     response_plain_text = response
                 
@@ -153,6 +179,13 @@ class Core():
                         result_content = str(result)
                 else:
                     result_content = str(response_plain_text)
+                
+                # 将assistant的回复添加到消息历史中
+                if result_content:
+                    self.messages.append({
+                        'role': 'assistant',
+                        'content': result_content
+                    })
                 
                 if result_content:
                     # 如果Agent返回了结果，则发送结果
@@ -185,43 +218,7 @@ class Core():
         await self.QQServer.send_text(output.content)
         self.task = None
     
-    async def heart_beat(self):
-        '''
-        重构服务主循环 - 采用事件驱动架构
-        优势：
-        1. 使用原生asyncio.Event实现高效事件通知（避免轮询）
-        2. 心跳与事件监听完全解耦
-        3. 支持真正的并行处理
-        4. 代码逻辑更清晰简洁
-        '''
-        print("Core Start")
-        while not self.should_exit:
-            # 并发等待：事件触发 或 心跳周期完成
-            try:
-                # 等待事件触发（带心跳超时）
-                await asyncio.wait_for(
-                    self.event.wait(), 
-                    timeout=60 / self.bpm
-                )
-                print('事件触发')                
-                # 重置事件
-                self.event.clear()
-                
-                # 检查是否需要退出
-                if self.should_exit:
-                    break
-                    
-                await self.services_epoch()
-                
-                
-            except asyncio.TimeoutError:
-                # 心跳周期完成
-                self.beat_count += 1
-                print(f'[{self.beat_count}] 心跳触发')
-                # 此处可添加机器人主动行为逻辑
-                # 例如：await self.autonomous_action()
-        
-        print("核心服务已停止")
+
     
     async def autonomous_toolchain(self):
         """机器人主动行为示例"""
