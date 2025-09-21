@@ -164,4 +164,3 @@ class ExpandOutput(CoreOutput):
     '''
     扩增的输出操作,在需要调用工具等时使用
     '''
-

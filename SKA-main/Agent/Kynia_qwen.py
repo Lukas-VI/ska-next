@@ -1,5 +1,6 @@
 """SKA的qwen-agaent实现"""
 import os  # noqa
+import json
 
 from qwen_agent.agents import Assistant
 from qwen_agent.gui import WebUI
@@ -7,29 +8,7 @@ from qwen_agent.utils.output_beautify import typewriter_print
 
 
 def init_agent_service():
-    # llm_cfg = {
-    #     # Use the model service provided by DashScope:
-    #     'model': 'qwen3-235b-a22b',
-    #     'model_type': 'qwen_dashscope',
 
-    #     # 'generate_cfg': {
-    #     #     # When using the Dash Scope API, pass the parameter of whether to enable thinking mode in this way
-    #     #     'enable_thinking': False,
-    #     # },
-    # }
-    # llm_cfg = {
-    #     # Use the OpenAI-compatible model service provided by DashScope:
-    #     'model': 'qwen3-235b-a22b',
-    #     'model_server': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    #     'api_key': os.getenv('DASHSCOPE_API_KEY'),
-    #
-    #     # 'generate_cfg': {
-    #     #     # When using Dash Scope OAI API, pass the parameter of whether to enable thinking mode in this way
-    #     #     'extra_body': {
-    #     #         'enable_thinking': False
-    #     #     },
-    #     # },
-    # }
     llm_cfg = {
         # Use your own model service compatible with OpenAI API by vLLM/SGLang:
         'model': 'qwen3:30b-a3b-instruct-2507-q4_K_M',
@@ -65,16 +44,16 @@ def init_agent_service():
         'code_interpreter',  # Built-in tools
     ]
 
-    tools = []
     bot = Assistant(llm=llm_cfg,
                     function_list=tools,
-                    name='Qwen3 Tool-calling Demo',
-                    description="I'm a demo using the Qwen3 tool calling. Welcome to add and play with your own tools!")
+                    system_message='',
+                    name='SKA',
+                    description="我是SKA，大家的好帮手，快来让我使用工具吧！")
 
     return bot
 
 
-def test(query: str = 'What time is it?'):
+'''def test(query: str = 'What time is it?'):
     # Define the agent
     bot = init_agent_service()
 
@@ -82,7 +61,7 @@ def test(query: str = 'What time is it?'):
     messages = [{'role': 'user', 'content': query}]
     response_plain_text = ''
     for response in bot.run(messages=messages):
-        response_plain_text = typewriter_print(response, response_plain_text)
+        response_plain_text = typewriter_print(response, response_plain_text)'''
 
 
 def app_tui():
@@ -90,7 +69,7 @@ def app_tui():
     bot = init_agent_service()
 
     # Chat
-    messages = []
+    messages = [{'role': 'system', 'content': '你是SKAgent'}]
     while True:
         query = input('user question: ')
         messages.append({'role': 'user', 'content': query})
@@ -98,6 +77,7 @@ def app_tui():
         response_plain_text = ''
         for response in bot.run(messages=messages):
             response_plain_text = typewriter_print(response, response_plain_text)
+        print(response)
         messages.extend(response)
 
 
@@ -119,4 +99,4 @@ def app_gui():
 if __name__ == '__main__':
     # test()
     # app_tui()
-    app_gui()
+    app_tui()
