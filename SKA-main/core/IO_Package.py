@@ -106,10 +106,14 @@ class CoreInput(IOPack):
         '''
         if isinstance(self.pack, dict):
             self.time = self.pack.get('time', '')
-            self.type = self.pack.get('message_type', '') + '_' + self.pack.get('post_type', '')
             self.user = self.pack.get('user_id', '')
             self.content = self.pack.get('raw_message', '')
             self.source = self.pack.get('message_type', '')
+            self.response = self.pack.get('response', '')
+            if "self_id" in self.pack:
+                self.type = self.pack.get('message_type', '') + '_' + "message"
+            else:
+                self.type = "LLM_"
         elif isinstance(self.pack, str):
             # 如果是字符串，尝试解析为JSON
             try:
@@ -120,6 +124,7 @@ class CoreInput(IOPack):
                     self.user = data.get('user_id', '')
                     self.content = data.get('raw_message', '')
                     self.source = data.get('message_type', '')
+                    self.response = data.get('response', '')
                 else:
                     # 纯文本内容
                     self.content = self.pack
@@ -129,7 +134,6 @@ class CoreInput(IOPack):
                 self.content = self.pack
                 self.type = 'text'
         return self
-
     
 
 class CoreOutput(IOPack):
@@ -145,11 +149,11 @@ class CoreOutput(IOPack):
         解析数据包并标准化Output类结构
         '''
         if isinstance(self.pack, dict):
-            # 处理Ollama API响应格式
+            # 处理提示词规定的响应格式
             if 'response' in self.pack:
                 self.content = self.pack.get('response', '')
                 self.time = self.pack.get('created_at', time.time())
-                self.type = 'ollama_response'
+                self.type = 'LLM_response'
                 
             else:
                 # 处理其他字典格式
@@ -179,32 +183,52 @@ def test():
     project_root = os.path.dirname(script_dir)
     misc_dir = os.path.join(project_root, 'misc')
     qq_msg_path = os.path.join(misc_dir, 'QQmsg_example.ini')
+    LLM_msg_path = os.path.join(misc_dir, 'LLM_outputs_example.ini')
     
     # 读取QQ消息示例
     with open(qq_msg_path, 'r', encoding='utf-8') as f:
         qq_msg_str = f.read()
     
-    # 测试CoreInput类
-    print("=== 测试CoreInput类 ===")
-    input_obj = CoreInput(qq_msg_str, "qq_json")
+    # 读取self消息示例
+    with open(LLM_msg_path, 'r', encoding='utf-8') as f:
+        LLM_msg_str = f.read()    
+
+    # 测试CoreInput类输入 QQ_msg
+    print("=== 测试CoreInput类 QQ_msg===")
+    input_QQ_obj = CoreInput(qq_msg_str, "qq_json")
     
-    print(f"原始数据包: {input_obj.pack}")
-    print(f"数据包类型: {input_obj.pack_type}")
-    print(f"数据包来源: {input_obj.pack_source}")
-    print(f"是否有效: {input_obj.is_valid}")
-    print(f"时间: {input_obj.time}")
-    print(f"类型: {input_obj.type}")
-    print(f"用户: {input_obj.user}")
-    print(f"内容: {input_obj.content}")
-    print(f"来源: {input_obj.source}")
+    print(f"原始数据包: {input_QQ_obj.pack}")
+    print(f"数据包类型: {input_QQ_obj.pack_type}")
+    print(f"数据包来源: {input_QQ_obj.pack_source}")
+    print(f"是否有效: {input_QQ_obj.is_valid}")
+    print(f"时间: {input_QQ_obj.time}")
+    print(f"类型: {input_QQ_obj.type}")
+    print(f"用户: {input_QQ_obj.user}")
+    print(f"内容: {input_QQ_obj.content}")
+    print(f"来源: {input_QQ_obj.source}")
     
+    # 测试CoreInput类 LLM_msg
+    print("=== 测试CoreInput类 LLM_msg===")
+    input_LLM_obj = CoreInput(LLM_msg_str, "qq_json")
+    
+    print(f"原始数据包: {input_LLM_obj.pack}")
+    print(f"数据包类型: {input_LLM_obj.pack_type}")
+    print(f"数据包来源: {input_LLM_obj.pack_source}")
+    print(f"是否有效: {input_LLM_obj.is_valid}")
+    print(f"时间: {input_LLM_obj.time}")
+    print(f"类型: {input_LLM_obj.type}")
+    print(f"用户: {input_LLM_obj.user}")
+    print(f"内容: {input_LLM_obj.content}")
+    print(f"来源: {input_LLM_obj.source}")
+
     # 测试CoreOutput类
     print("\n=== 测试CoreOutput类 ===")
     output_data = {
-        "response": "这是测试回复",
-        "created_at": "2025-09-16T16:17:30.1028138Z"
+            "target": "group_msg",
+            "type": "text",
+            "content": "欢迎欢迎!"
     }
-    output_obj = CoreOutput(output_data, "ollama_json")
+    output_obj = CoreOutput(output_data, "LLM_response")
     
     print(f"原始数据包: {output_obj.pack}")
     print(f"时间: {output_obj.time}")

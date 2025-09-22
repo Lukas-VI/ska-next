@@ -28,12 +28,12 @@
             "heartbeat": {
             "type": "system",
             "event": "heartbeat",
-            "stsk": "证明你还活着的心跳信号"
+            "task": "证明你还活着的心跳信号"
           },
             "早上七点叫大家起床": {
               "type": "system",
               "event": "早上七点叫大家起床",
-              "stsk": "你可以用你的工具找点新鲜事分享给大家"
+              "task": "你可以用你的工具找点新鲜事分享给大家"
             }
           }
         }
@@ -123,7 +123,7 @@
           "input":  {
             "type": "system",
             "event": "heartbeat",
-            "stsk": "证明你还活着的心跳信号"
+            "task": "证明你还活着的心跳信号"
           },
           "output": {
             "target": "group_msg",
@@ -135,7 +135,7 @@
             "input": {
                 "type": "system",
                 "event": "早上七点叫大家起床",
-                "stsk": "你可以用你的喵喵工具找点新鲜事分享给大家"
+                "task": "你可以用你的喵喵工具找点新鲜事分享给大家"
             },
             "output": {
               "target": "group_msg",
