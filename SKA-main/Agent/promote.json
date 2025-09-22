@@ -64,7 +64,7 @@
         "self_msg": {
           "description": "表达自己的心声,当你认为自己当前的输出不够好,或者不想回复他们无聊的消息,或者是你有什么小秘密还是生气了不想说话,那么你可以发一个这个,自言自语,或根据'special_content'执行指令",
           "special_content": {
-            "/skip": "用于跳过对话,不回复消息",
+            "/skip": "用于跳过对话,不回复消息"
           },
           "fields": ["type", "content", "card", "target"],
           "example": {
@@ -142,7 +142,9 @@
               "type": "text",
               "content": "都起来辣!这是今日份我找到可能有意思的:......."
             }
-        },
+        }
+      }
+    },
     "output_generation": [
       "严格按照指定的JSON格式输出",
       "明确指定目标对象"
