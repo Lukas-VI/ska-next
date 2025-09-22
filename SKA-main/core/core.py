@@ -84,7 +84,43 @@ class Core():
         except Exception as e:
             print(f"Failed to load prompt template: {e}")
             self.prompt_template = ""
-    
+    async def heart_beat(self):
+        '''
+        重构服务主循环 - 采用事件驱动架构
+        优势：
+        1. 使用原生asyncio.Event实现高效事件通知（避免轮询）
+        2. 心跳与事件监听完全解耦
+        3. 支持真正的并行处理
+        4. 代码逻辑更清晰简洁
+        '''
+        print("Core Start")
+        while not self.should_exit:
+            # 并发等待：事件触发 或 心跳周期完成
+            try:
+                # 等待事件触发（带心跳超时）
+                await asyncio.wait_for(
+                    self.event.wait(), 
+                    timeout=60 / self.bpm
+                )
+                print('事件触发')                
+                # 重置事件
+                self.event.clear()
+                
+                # 检查是否需要退出
+                if self.should_exit:
+                    break
+                    
+                await self.services_epoch()
+                
+                
+            except asyncio.TimeoutError:
+                # 心跳周期完成
+                self.beat_count += 1
+                print(f'[{self.beat_count}] 心跳触发')
+                # 此处可添加机器人主动行为逻辑
+                # 例如：await self.autonomous_action()
+        
+        print("核心服务已停止")
     async def start(self):
         """
         启动所有异步(网络)服务
