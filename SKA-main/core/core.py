@@ -30,8 +30,8 @@ class Core():
         self.beat_count = 0 #存活心跳记录
         self.bpm = 1
 
-        self.Input = ''
-        self.Outpit = ''
+        self.Input : CoreInput
+        self.Output : CoreOutput
         self.messages = []
         
         self.task = None
@@ -102,7 +102,7 @@ class Core():
                     self.event.wait(), 
                     timeout=60 / self.bpm
                 )
-                print('事件触发')                
+                print(self.event.__qualname__, '事件触发')                
                 # 重置事件
                 self.event.clear()
                 
@@ -153,9 +153,9 @@ class Core():
         # 获取当前函数名作为task值
         self.task = sys._getframe().f_code.co_name
         print(f"task: [{self.task}]")
-        input = CoreInput(self.QQServer.recive_data, "qq_json")
-        output = CoreOutput(await self.Agent_API.ollama_generate(input.content), "ollama_json")
-        await self.QQServer.send_text(output.content)
+        self.Input = CoreInput(self.QQServer.recive_data, "qq_json")
+        self.output = CoreOutput(await self.Agent_API.ollama_generate(self.Input.content), "ollama_json")
+        await self.QQServer.send_text(self.output)
         self.task = None
 
     def msg_construct(self, input: CoreInput):
@@ -175,14 +175,31 @@ class Core():
                 })
         
         # 添加用户消息
-        if input.source : 
+        content = None
+        if input.source == "qq_message": 
+            content = {
+                "message_type": input.type,
+                "raw_message": input.content,
+                "card": input.card,
+                "time": input.time
+            }
+        elif input.source == "self_response":
+            content = {
+                "response": input.response
+            }
+        elif input.source == "system": 
+            content = {
+                "type": "system",
+                "event": input.event,
+                "task": input.content
+            }
+        if content is not None:
             self.messages.append({
                 'role': 'user',
-                'content': input.content if hasattr(input, 'content') else str(input)
+                'content': content
             })
 
 
-    
     async def qwen_agent_toolchain(self):
         '''
         使用Qwen Agent的消息处理逻辑
@@ -195,7 +212,9 @@ class Core():
             # 使用Qwen Agent处理消息
             if self.qwen_agent is not None:
                 # 从QQ服务器获取消息内容
-                input_msg = CoreInput(self.QQServer.recive_data, "qq_json")
+                input_msg = self.Input
+                if self.QQServer.recive_data:
+                    input_msg = CoreInput(self.QQServer.recive_data, "qq_json")
                 # 构造符合Qwen Agent要求的消息格式
                 self.msg_construct(input_msg)
                 
@@ -210,7 +229,7 @@ class Core():
                 if isinstance(response_plain_text, list) and len(response_plain_text) > 0:
                     result = response_plain_text[-1]  # 获取最后一个响应
                     if isinstance(result, dict) and 'content' in result:
-                        result_content = result['content']
+                        result_content = json.load(result['content'])
                     else:
                         result_content = str(result)
                 else:
@@ -222,10 +241,15 @@ class Core():
                         'role': 'assistant',
                         'content': result_content
                     })
-                
-                if result_content:
+                self.Output = CoreOutput(result_content, "LLM_response")
+                if self.Output.target == "private_msg" or "private_msg":
                     # 如果Agent返回了结果，则发送结果
-                    await self.QQServer.send_text(result_content)
+                    await self.QQServer.send_text(self.Output)
+                elif self.Output.target == 'self':
+                    pack = {
+                        "response": self.Output.content
+                    }
+                    self.Input = CoreInput(pack, "LLM_response")
                 else:
                     # 如果没有结果，回退到基本工具链
                     await self.basic_toolchain()
@@ -251,7 +275,7 @@ class Core():
         print(f"task: [{self.task}]")
         input = CoreInput(self.QQServer.recive_data, "qq_json")
         output = CoreOutput(await self.Agent_API.ollama_generate(input.content), "ollama_json")
-        await self.QQServer.send_text(output.content)
+        await self.QQServer.send_text(output)
         self.task = None
     
 

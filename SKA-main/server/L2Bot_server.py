@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 import json
+from core.IO_Package import CoreOutput 
 
 class QQHttpServer():
     def __init__(self) -> None:
@@ -78,19 +79,36 @@ class QQHttpServer():
                 else:
                     break                    
 
-    async def send_text(self, text):
+    async def send_text(self, pack: CoreOutput):
         try:
             # 使用异步方式发送消息
-            async with httpx.AsyncClient() as client:
-                await client.post(self.l2Bot_api+self.send_mode, json={
-                    'group_id': self.target_id['id'],
-                    'message': [{
-                                'type': 'text',
-                                'data': {
-                                'text': f'{text}'
+            j = None
+            if pack.target == "private_msg":
+                j = {
+                    "user_id": 1029797287,
+                    "message": [
+                        {
+                            "type": "text",
+                            "data": {
+                                "text": pack.content
+                            }
                         }
-                    }]
-                })
+                    ]
+                }
+            elif pack.target == "group_msg":
+                j = {
+                    "group_id": 965244857,
+                    "message": [
+                        {
+                            "type": "text",
+                            "data": {
+                                "text": pack.content
+                            }
+                        }
+                    ]
+                }
+            async with httpx.AsyncClient() as client:
+                await client.post(self.l2Bot_api+self.send_mode, json=j)
         except Exception as e:
             print(f"发送消息失败: {str(e)}")
 
