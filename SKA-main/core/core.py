@@ -102,7 +102,7 @@ class Core():
                     self.event.wait(), 
                     timeout=60 / self.bpm
                 )
-                print(self.event.__qualname__, '事件触发')                
+                print(self.event, '事件触发')                
                 # 重置事件
                 self.event.clear()
                 
