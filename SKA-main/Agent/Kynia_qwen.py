@@ -1,11 +1,107 @@
 """SKA的qwen-agaent实现"""
 import os  # noqa
+import json5
+
+import json
+import http.client
+import json
 
 from qwen_agent.agents import Assistant
 from qwen_agent.gui import WebUI
 from qwen_agent.utils.output_beautify import typewriter_print
+from qwen_agent.tools.base import BaseTool, register_tool
 
+# Add a custom tool named my_image_gen：
+@register_tool('private_msg')
+class PrivateMsg(BaseTool):
+    description = '私信发送服务, 输入目标用户昵称与内容, 返回状态码'
+    parameters = [
+        {
+            'name': 'user_card',
+            'type': 'string',
+            'description': '用户的昵称',
+            'required': True,
+        },
+        {
+            'name': 'text',
+            'type': 'string',
+            'description': '将要输出的信息',
+            'required': True,
+        },
+    ]
 
+    def call(self, params: str, **kwargs) -> str:
+        data = ''
+        try:
+            user_card = json5.loads(params)['user_card']
+            text = json5.loads(params)['text']
+            conn = http.client.HTTPSConnection("127.0.0.1", 3000)
+            payload = json.dumps({
+                "user_id": 1029797287,
+                "message": [
+                    {
+                        "type": "text",
+                        "data": {
+                            "text": text
+                        }
+                    }
+                ]
+            })
+            headers = {
+            'Content-Type': 'application/json'
+            }
+            conn.request("POST", "/send_private_msg", payload, headers)
+            res = conn.getresponse()
+            data = res.read().decode("utf-8")
+        except Exception as e:
+            print(f"发送消息 send_private_msg 失败: {str(e)}")    
+        return data
+
+@register_tool('group_msg')
+class GroupMsg(BaseTool):
+    description = '私信发送服务, 输入目标用户昵称与内容, 返回状态码'
+    parameters = [
+        {
+            'name': 'user_card',
+            'type': 'string',
+            'description': '用户的昵称',
+            'required': True,
+        },
+        {
+            'name': 'text',
+            'type': 'string',
+            'description': '将要输出的信息',
+            'required': True,
+        },
+    ]
+
+    def call(self, params: str, **kwargs) -> str:
+        data = ''
+        try:
+            user_card = json5.loads(params)['user_card']
+            text = json5.loads(params)['text']
+            conn = http.client.HTTPSConnection("127.0.0.1", 3000)
+            payload = json.dumps({
+                "user_id": 965244857,
+                "message": [
+                    {
+                        "type": "text",
+                        "data": {
+                            "text": text
+                        }
+                    }
+                ]
+            })
+            headers = {
+            'Content-Type': 'application/json'
+            }
+            conn.request("POST", "/send_group_msg", payload, headers)
+            res = conn.getresponse()
+            data = res.read().decode("utf-8")
+        except Exception as e:
+            print(f"发送消息 private_msg 失败: {str(e)}")    
+        return data
+    
 def init_agent_service():
 
     llm_cfg = {
@@ -17,7 +113,8 @@ def init_agent_service():
         'generate_cfg': {
             # When using vLLM/SGLang OAI API, pass the parameter of whether to enable thinking mode in this way
             'extra_body': {
-                'chat_template_kwargs': {'enable_thinking': False}
+                # 'chat_template_kwargs': {'enable_thinking': False},
+                "max_input_tokens": 100
             },
     
             # Add: When the content is `<think>this is the thought</think>this is the answer`
@@ -26,7 +123,7 @@ def init_agent_service():
             # 'thought_in_content': True,
         },
     }
-  
+
     tools = [
         {
             'mcpServers': {  # You can specify the MCP configuration file
@@ -41,14 +138,29 @@ def init_agent_service():
             }
         },
         'code_interpreter',  # Built-in tools
+        'private_msg',
+        'group_msg'
     ]
 
+    """加载提示词模板"""
+    try:
+        with open('SKA-main/Agent/prompt.json', 'r', encoding='utf-8') as f:
+            prompt_template = f.read()
+            '''try:
+                with open('SKA-main/Agent/card.json', 'r', encoding='utf-8') as f:
+                    prompt_template += f.read()
+            except Exception as e:
+                print(f"Failed to load card: {e}")'''
+        print("Prompt template loaded successfully")
+    except Exception as e:
+        print(f"Failed to load prompt template: {e}")
+        prompt_template = ""
+    # print(prompt_template)
     bot = Assistant(llm=llm_cfg,
                     function_list=tools,
-                    system_message='',
-                    name='SKA',
-                    description="我是SKA，大家的好帮手，快来让我使用工具吧！")
-
+                    system_message=prompt_template,
+                    name='SKA2',
+                    description="我是SKA2，大家的好帮手，快来让我使用工具吧！")
     return bot
 
 
@@ -74,10 +186,10 @@ def app_tui():
         messages.append({'role': 'user', 'content': query})
         response = []
         response_plain_text = ''
-        for response in bot.run(messages=messages):
-            response_plain_text = typewriter_print(response, response_plain_text)
+        for response in bot.run(messages=messages): # type: ignore
+            response_plain_text = typewriter_print(response, response_plain_text) # type: ignore
         print(response)
-        messages.extend(response)
+        messages.extend(response) # type: ignore
 
 
 def app_gui():
@@ -98,4 +210,4 @@ def app_gui():
 if __name__ == '__main__':
     # test()
     # app_tui()
-    app_tui()
+    app_gui()

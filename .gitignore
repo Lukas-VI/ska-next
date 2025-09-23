@@ -21,3 +21,6 @@ Solutions/
 # information for Eclipse / Flash Builder.
 workspace/tools/
 
+SKA-main/Agent/card.json
+SKA-main/Agent/prompt.json
+SKA-main/Agent/prompt2.json

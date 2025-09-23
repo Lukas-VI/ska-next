@@ -84,6 +84,7 @@ class QQHttpServer():
             # 使用异步方式发送消息
             j = None
             if pack.target == "private_msg":
+                self.send_mode = "send_private_msg"
                 j = {
                     "user_id": 1029797287,
                     "message": [
@@ -96,6 +97,7 @@ class QQHttpServer():
                     ]
                 }
             elif pack.target == "group_msg":
+                self.send_mode = "send_group_msg"
                 j = {
                     "group_id": 965244857,
                     "message": [

@@ -30,7 +30,7 @@ class Core():
         self.beat_count = 0 #存活心跳记录
         self.bpm = 1
 
-        self.Input : CoreInput
+        self.Input = CoreInput("initial_msg", 'initial_msg')
         self.Output : CoreOutput
         self.messages = []
         
@@ -154,7 +154,7 @@ class Core():
         self.task = sys._getframe().f_code.co_name
         print(f"task: [{self.task}]")
         self.Input = CoreInput(self.QQServer.recive_data, "qq_json")
-        self.output = CoreOutput(await self.Agent_API.ollama_generate(self.Input.content), "ollama_json")
+        self.output = CoreOutput(await self.Agent_API.ollama_chat(self.Input.content), "ollama_json")
         await self.QQServer.send_text(self.output)
         self.task = None
 
@@ -245,7 +245,7 @@ class Core():
                 if self.Output.target == "private_msg" or "private_msg":
                     # 如果Agent返回了结果，则发送结果
                     await self.QQServer.send_text(self.Output)
-                elif self.Output.target == 'self':
+                elif self.Output.target == 'internal':
                     pack = {
                         "response": self.Output.content
                     }
@@ -277,9 +277,7 @@ class Core():
         output = CoreOutput(await self.Agent_API.ollama_generate(input.content), "ollama_json")
         await self.QQServer.send_text(output)
         self.task = None
-    
 
-    
     async def autonomous_toolchain(self):
         """机器人主动行为示例"""
         # 实现自主活动逻辑，如：
