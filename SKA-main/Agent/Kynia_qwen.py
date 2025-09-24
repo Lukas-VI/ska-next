@@ -4,7 +4,6 @@ import json5
 
 import json
 import http.client
-import json
 
 from qwen_agent.agents import Assistant
 from qwen_agent.gui import WebUI
@@ -30,11 +29,11 @@ class PrivateMsg(BaseTool):
         },
     ]
 
-    def call(self, params: str, **kwargs) -> str:
+    def call(self, params: str, **kwargs) -> str: # type: ignore
         data = ''
         try:
-            user_card = json5.loads(params)['user_card']
-            text = json5.loads(params)['text']
+            user_card = json5.loads(params)['user_card']    # type: ignore  # noqa: F841
+            text = json5.loads(params)['text']  # type: ignore
             conn = http.client.HTTPSConnection("127.0.0.1", 3000)
             payload = json.dumps({
                 "user_id": 1029797287,
@@ -62,12 +61,6 @@ class GroupMsg(BaseTool):
     description = '私信发送服务, 输入目标用户昵称与内容, 返回状态码'
     parameters = [
         {
-            'name': 'user_card',
-            'type': 'string',
-            'description': '用户的昵称',
-            'required': True,
-        },
-        {
             'name': 'text',
             'type': 'string',
             'description': '将要输出的信息',
@@ -75,11 +68,10 @@ class GroupMsg(BaseTool):
         },
     ]
 
-    def call(self, params: str, **kwargs) -> str:
+    def call(self, params: str, **kwargs) -> str:   # type: ignore
         data = ''
         try:
-            user_card = json5.loads(params)['user_card']
-            text = json5.loads(params)['text']
+            text = json5.loads(params)['text']  # type: ignore
             conn = http.client.HTTPSConnection("127.0.0.1", 3000)
             payload = json.dumps({
                 "user_id": 965244857,

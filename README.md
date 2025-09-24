@@ -16,8 +16,13 @@
 
 1.  配置python3.12 +环境，暂时没有requirements可供参考
 2.  可以选择安装llonebot进行调试，但存在相当大的风险，如有意外概不负责
+
 3.  配置 Node.js 和 uvx 环境,用于运行工具
+
+    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 4.  暂时只支持Qwen-agent实现,作为替代需要安装此库
+
+    pip install -U "qwen-agent[gui,rag,code_interpreter,mcp]"
 
 
 ## 使用说明
