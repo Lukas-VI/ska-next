@@ -34,7 +34,7 @@ class PrivateMsg(BaseTool):
         try:
             user_card = json5.loads(params)['user_card']    # type: ignore  # noqa: F841
             text = json5.loads(params)['text']  # type: ignore
-            conn = http.client.HTTPSConnection("127.0.0.1", 3000)
+            conn = http.client.HTTPConnection("127.0.0.1", 3000)
             payload = json.dumps({
                 "user_id": 1029797287,
                 "message": [
@@ -72,9 +72,9 @@ class GroupMsg(BaseTool):
         data = ''
         try:
             text = json5.loads(params)['text']  # type: ignore
-            conn = http.client.HTTPSConnection("127.0.0.1", 3000)
+            conn = http.client.HTTPConnection("127.0.0.1", 3000)
             payload = json.dumps({
-                "user_id": 965244857,
+                "group_id": 965244857,
                 "message": [
                     {
                         "type": "text",
@@ -136,7 +136,7 @@ def init_agent_service():
 
     """加载提示词模板"""
     try:
-        with open('SKA-main/Agent/prompt.json', 'r', encoding='utf-8') as f:
+        with open('SKA-main/Agent/prompt2.json', 'r', encoding='utf-8') as f:
             prompt_template = f.read()
             '''try:
                 with open('SKA-main/Agent/card.json', 'r', encoding='utf-8') as f:

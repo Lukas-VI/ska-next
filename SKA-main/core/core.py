@@ -32,7 +32,7 @@ class Core():
 
         self.Input = CoreInput("initial_msg", 'initial_msg')
         self.Output : CoreOutput
-        self.messages = []
+        self.messages = [{'role': 'user', 'content': "已启动……"}]
         
         self.task = None
         self.event = asyncio.Event()  # 异步事件对象
@@ -196,7 +196,7 @@ class Core():
         if content is not None:
             self.messages.append({
                 'role': 'user',
-                'content': content
+                'content': str(content)
             })
 
 
