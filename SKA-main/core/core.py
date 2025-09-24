@@ -61,7 +61,7 @@ class Core():
         self._setup_signal_handlers()
         
         # 加载提示词模板
-        self._load_prompt_template()
+        # self._load_prompt_template()
     
     def _setup_signal_handlers(self):
         """设置信号处理器以优雅地处理退出信号"""
@@ -229,7 +229,7 @@ class Core():
                 if isinstance(response_plain_text, list) and len(response_plain_text) > 0:
                     result = response_plain_text[-1]  # 获取最后一个响应
                     if isinstance(result, dict) and 'content' in result:
-                        result_content = json.load(result['content'])
+                        result_content = result['content']
                     else:
                         result_content = str(result)
                 else:
@@ -241,7 +241,7 @@ class Core():
                         'role': 'assistant',
                         'content': result_content
                     })
-                self.Output = CoreOutput(result_content, "LLM_response")
+                self.Output = CoreOutput(json.loads(result_content), "LLM_response")
                 if self.Output.target == "private_msg" or "private_msg":
                     # 如果Agent返回了结果，则发送结果
                     await self.QQServer.send_text(self.Output)
