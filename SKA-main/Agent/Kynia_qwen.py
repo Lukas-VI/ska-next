@@ -69,8 +69,8 @@ class QQMessageSender(BaseTool):
                     
                 user_id = 1029797287
                 # 安全加载用户id
-                prompt_file_path = os.path.join(os.path.dirname(__file__), 'user_id_dict.json')
-                with open(prompt_file_path, 'r', encoding='utf-8') as f:
+                user_id_dict_path = os.path.join(os.path.dirname(__file__), 'user_id_dict.json')
+                with open(user_id_dict_path, 'r', encoding='utf-8') as f:
                     user_id_dict = json5.load(f)
                     user_id = user_id_dict.get(user_card, user_id)
                     
@@ -180,7 +180,8 @@ def init_agent_service():
 
     """加载提示词模板"""
     try:
-        with open('SKA-main/Agent/prompt2.json', 'r', encoding='utf-8') as f:
+        prompt_templatet_path = os.path.join(os.path.dirname(__file__), 'prompt2.json')
+        with open(prompt_templatet_path, 'r', encoding='utf-8') as f:
             prompt_template = f.read()
             '''try:
                 with open('SKA-main/Agent/card.json', 'r', encoding='utf-8') as f:
