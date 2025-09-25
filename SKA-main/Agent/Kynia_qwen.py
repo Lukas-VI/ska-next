@@ -32,11 +32,13 @@ class PrivateMsg(BaseTool):
     def call(self, params: str, **kwargs) -> str: # type: ignore
         data = ''
         try:
-            user_card = json5.loads(params)['user_card']    # type: ignore  # noqa: F841
+            user_id_dict = {"LUKAS": 1029797287, "фейерверк": 577913397, "^": 1163166910 }
+            user_card = str(json5.loads(params)['user_card'])    # type: ignore  # noqa: F841
+            user_id = user_id_dict[user_card]
             text = json5.loads(params)['text']  # type: ignore
             conn = http.client.HTTPConnection("127.0.0.1", 3000)
             payload = json.dumps({
-                "user_id": 1029797287,
+                "user_id": user_id,
                 "message": [
                     {
                         "type": "text",
@@ -53,8 +55,9 @@ class PrivateMsg(BaseTool):
             res = conn.getresponse()
             data = res.read().decode("utf-8")
         except Exception as e:
-            print(f"发送消息 send_private_msg 失败: {str(e)}")    
-        return data
+            data = f"发送消息 send_private_msg 失败: {str(e)}"
+            print(data)
+        return data  
 
 @register_tool('group_msg')
 class GroupMsg(BaseTool):
