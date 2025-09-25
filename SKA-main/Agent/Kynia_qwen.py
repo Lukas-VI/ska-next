@@ -4,141 +4,124 @@ import json5
 
 import json
 import http.client
+from typing import Any, Dict
 
 from qwen_agent.agents import Assistant
 from qwen_agent.gui import WebUI
 from qwen_agent.utils.output_beautify import typewriter_print
 from qwen_agent.tools.base import BaseTool, register_tool
+# 修复导入路径问题
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from core.message_filter import MessageFilter
 
 
-
-@register_tool('self_msg')
-class SelfMsg(BaseTool):
-    description = '给自己发消息表达心声, 返回状态码'
+@register_tool('message_sender')
+class MessageSender(BaseTool):
+    description = '统一消息发送服务，支持私聊和群聊消息'
     parameters = [
+        {
+            'name': 'type',
+            'type': 'string',
+            'description': '消息类型: private(私聊消息), group(群聊消息)',
+            'required': True,
+        },
         {
             'name': 'text',
             'type': 'string',
             'description': '将要输出的信息',
             'required': True,
         },
-    ]
-
-    def call(self, params: str, **kwargs) -> str: # type: ignore
-        data = ''
-        try:
-            user_id = 1029797287
-            text = json5.loads(params)['text']  # type: ignore
-            conn = http.client.HTTPConnection("127.0.0.1", 3000)
-            payload = json.dumps({
-                "user_id": user_id,
-                "message": [
-                    {
-                        "type": "text",
-                        "data": {
-                            "text": text
-                        }
-                    }
-                ]
-            })
-            headers = {'Content-Type': 'application/json'}
-            conn.request("POST", "/send_private_msg", payload, headers)
-            res = conn.getresponse()
-            data = res.read().decode("utf-8")
-        except Exception as e:
-            data = f"发送消息 send_private_msg 失败: {str(e)}"
-            print(data)
-        return data  
-
-@register_tool('private_msg')
-class PrivateMsg(BaseTool):
-    description = '私信发送服务, 输入目标用户昵称与内容, 返回状态码'
-    parameters = [
         {
             'name': 'user_card',
             'type': 'string',
-            'description': '用户的昵称',
-            'required': True,
-        },
-        {
-            'name': 'text',
-            'type': 'string',
-            'description': '将要输出的信息',
-            'required': True,
+            'description': '用户的昵称（私聊时必需）',
+            'required': False,
         },
     ]
 
-    def call(self, params: str, **kwargs) -> str: # type: ignore
+    def __init__(self):
+        super().__init__()
+        self.message_filter = MessageFilter()
+
+    def call(self, params: str, **kwargs) -> str:  # type: ignore
         data = ''
         try:
-            user_id = 1029797287
-            user_card = str(json5.loads(params)['user_card'])    # type: ignore  # noqa: F841
-            with open('SKA-main/Agent/prompt2.json', 'r', encoding='utf-8') as f:
-                user_id_dict = json5.load(f)
-                user_id = user_id_dict[user_card]
-                
-            text = json5.loads(params)['text']  # type: ignore
+            # 修复类型问题
+            params_dict: Dict[str, Any] = json5.loads(params)  # type: ignore
+            msg_type = params_dict.get('type', '')
+            text = params_dict.get('text', '')
+            user_card = params_dict.get('user_card', '')
+            
+            # 过滤消息内容
+            filtered_text = self.message_filter.filter_message(text)
+            
+            # 检查是否包含违禁内容
+            if self.message_filter.contains_banned_content(text):
+                print("消息包含违禁内容，已过滤")
+                filtered_text = "[消息包含敏感内容，已被过滤]"
+            
             conn = http.client.HTTPConnection("127.0.0.1", 3000)
-            payload = json.dumps({
-                "user_id": user_id,
-                "message": [
-                    {
-                        "type": "text",
-                        "data": {
-                            "text": text
+            headers = {'Content-Type': 'application/json'}
+            
+            if msg_type == 'private':
+                # 私聊消息
+                if not user_card:
+                    return "发送私聊消息需要提供用户昵称(user_card)"
+                    
+                user_id = 1029797287
+                # 安全加载用户id
+                prompt_file_path = os.path.join(os.path.dirname(__file__), 'user_id_dict.json')
+                with open(prompt_file_path, 'r', encoding='utf-8') as f:
+                    user_id_dict = json5.load(f)
+                    user_id = user_id_dict.get(user_card, user_id)
+                    
+                payload = json.dumps({
+                    "user_id": user_id,
+                    "message": [
+                        {
+                            "type": "text",
+                            "data": {
+                                "text": filtered_text
+                            }
                         }
-                    }
-                ]
-            })
-            headers = {
-            'Content-Type': 'application/json'
-            }
-            conn.request("POST", "/send_private_msg", payload, headers)
-            res = conn.getresponse()
-            data = res.read().decode("utf-8")
+                    ]
+                })
+                conn.request("POST", "/send_private_msg", payload, headers)
+                res = conn.getresponse()
+                data = res.read().decode("utf-8")
+                
+            elif msg_type == 'group':
+                # 群聊消息
+                payload = json.dumps({
+                    "group_id": 965244857,
+                    "message": [
+                        {
+                            "type": "text",
+                            "data": {
+                                "text": filtered_text
+                            }
+                        }
+                    ]
+                })
+                conn.request("POST", "/send_group_msg", payload, headers)
+                res = conn.getresponse()
+                data = res.read().decode("utf-8")
+            else:
+                return "不支持的消息类型，请使用 private 或 group"
+                
+        except FileNotFoundError as e:
+            data = f"文件未找到: {str(e)}"
+            print(data)
+        except KeyError as e:
+            data = f"配置错误: {str(e)}"
+            print(data)
         except Exception as e:
-            data = f"发送消息 send_private_msg 失败: {str(e)}"
+            data = f"发送消息失败: {str(e)}"
             print(data)
         return data  
 
-@register_tool('group_msg')
-class GroupMsg(BaseTool):
-    description = '私信发送服务, 输入目标用户昵称与内容, 返回状态码'
-    parameters = [
-        {
-            'name': 'text',
-            'type': 'string',
-            'description': '将要输出的信息',
-            'required': True,
-        },
-    ]
 
-    def call(self, params: str, **kwargs) -> str:   # type: ignore
-        data = ''
-        try:
-            text = json5.loads(params)['text']  # type: ignore
-            conn = http.client.HTTPConnection("127.0.0.1", 3000)
-            payload = json.dumps({
-                "group_id": 965244857,
-                "message": [
-                    {
-                        "type": "text",
-                        "data": {
-                            "text": text
-                        }
-                    }
-                ]
-            })
-            headers = {
-            'Content-Type': 'application/json'
-            }
-            conn.request("POST", "/send_group_msg", payload, headers)
-            res = conn.getresponse()
-            data = res.read().decode("utf-8")
-        except Exception as e:
-            print(f"发送消息 private_msg 失败: {str(e)}")    
-        return data
-    
 def init_agent_service():
 
     llm_cfg = {
@@ -194,9 +177,7 @@ def init_agent_service():
             }
         },
         'code_interpreter',  # Built-in tools
-        'private_msg',
-        'group_msg',
-        'self_msg'
+        'message_sender'
     ]
 
     """加载提示词模板"""
