@@ -123,10 +123,29 @@ def init_agent_service():
                     'command': 'uvx',
                     'args': ['mcp-server-time', '--local-timezone=Asia/Shanghai']
                 },
-                'fetch': {
-                    'command': 'uvx',
-                    'args': ['mcp-server-fetch']
-                }
+                "fetch": {
+                    "args": ["mcp-server-fetch"],
+                    "command": "uvx"
+                },
+                "playwright": {
+                    "command": "npx",
+                    "args": ["@playwright/mcp@latest"]
+                },
+                "bingcn": {
+                    "args": ["bing-cn-mcp"],
+                    "command": "npx"
+                },
+                "memory": {
+                    "args": ["-y","@modelcontextprotocol/server-memory"],"command": "npx"
+                },
+                "12306-mcp": {
+                    "args": ["-y","12306-mcp"],
+                    "command": "npx"
+                },
+                 "howtocook-mcp": {
+                    "args": ["-y","howtocook-mcp"],
+                    "command": "npx"
+                },
             }
         },
         'code_interpreter',  # Built-in tools
