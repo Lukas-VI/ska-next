@@ -255,11 +255,12 @@ class Core():
                     await self.basic_toolchain()
             else:
                 # 如果没有Qwen Agent，回退到基本工具链
-                await self.basic_toolchain()
+                # await self.basic_toolchain()
+                print("Agent_ERROR")
         except Exception as e:
             print(f"Error in Qwen Agent toolchain: {e}")
             # 出错时回退到基本工具链
-            await self.basic_toolchain()
+            # await self.basic_toolchain()
             
         self.task = None
 
