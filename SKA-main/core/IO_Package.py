@@ -141,7 +141,7 @@ class CoreInput(IOPack):
                 self.source = self.pack.get('message_type', '')
                 # 从sender对象中获取card/nickname
                 sender = self.pack.get('sender', {})
-                self.card = sender.get('card', sender.get('nickname', ''))
+                self.card = sender.get('card', sender.get('card', ''))
             
             # 处理LLM响应(self_response)
             elif self.pack_source == 'self_response':
@@ -179,7 +179,7 @@ class CoreInput(IOPack):
                         self.source = data.get('message_type', '')
                         # 从sender对象中获取card/nickname
                         sender = data.get('sender', {})
-                        self.card = sender.get('card', sender.get('nickname', ''))
+                        self.card = sender.get('card', sender.get('card', ''))
                     
                     # 处理LLM响应(self_response)
                     elif self.pack_source == 'self_response':

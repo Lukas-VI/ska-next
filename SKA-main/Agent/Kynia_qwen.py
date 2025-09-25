@@ -16,8 +16,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from core.message_filter import MessageFilter
 
 
-@register_tool('message_sender')
-class MessageSender(BaseTool):
+@register_tool('qq_message', True)
+class QQMessageSender(BaseTool):
     description = '统一消息发送服务，支持私聊和群聊消息'
     parameters = [
         {
@@ -40,11 +40,9 @@ class MessageSender(BaseTool):
         },
     ]
 
-    def __init__(self):
-        super().__init__()
-        self.message_filter = MessageFilter()
-
+        
     def call(self, params: str, **kwargs) -> str:  # type: ignore
+        self.message_filter = MessageFilter()
         data = ''
         try:
             # 修复类型问题
@@ -137,7 +135,7 @@ def init_agent_service():
                 "max_input_tokens": 100
             },
     
-            # Add: When the content is `<think>this is the thought</think>this is the answer`
+            # Add: When the content is ```
             # Do not add: When the response has been separated by reasoning_content and content
             # This parameter will affect the parsing strategy of tool call
             # 'thought_in_content': True,
@@ -173,11 +171,11 @@ def init_agent_service():
                  "howtocook-mcp": {
                     "args": ["-y","howtocook-mcp"],
                     "command": "npx"
-                },
+                }
             }
         },
         'code_interpreter',  # Built-in tools
-        'message_sender'
+        'qq_message'
     ]
 
     """加载提示词模板"""
