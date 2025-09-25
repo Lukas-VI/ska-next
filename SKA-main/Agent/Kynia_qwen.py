@@ -10,7 +10,46 @@ from qwen_agent.gui import WebUI
 from qwen_agent.utils.output_beautify import typewriter_print
 from qwen_agent.tools.base import BaseTool, register_tool
 
-# Add a custom tool named my_image_gen：
+
+
+@register_tool('self_msg')
+class SelfMsg(BaseTool):
+    description = '给自己发消息表达心声, 返回状态码'
+    parameters = [
+        {
+            'name': 'text',
+            'type': 'string',
+            'description': '将要输出的信息',
+            'required': True,
+        },
+    ]
+
+    def call(self, params: str, **kwargs) -> str: # type: ignore
+        data = ''
+        try:
+            user_id = 1029797287
+            text = json5.loads(params)['text']  # type: ignore
+            conn = http.client.HTTPConnection("127.0.0.1", 3000)
+            payload = json.dumps({
+                "user_id": user_id,
+                "message": [
+                    {
+                        "type": "text",
+                        "data": {
+                            "text": text
+                        }
+                    }
+                ]
+            })
+            headers = {'Content-Type': 'application/json'}
+            conn.request("POST", "/send_private_msg", payload, headers)
+            res = conn.getresponse()
+            data = res.read().decode("utf-8")
+        except Exception as e:
+            data = f"发送消息 send_private_msg 失败: {str(e)}"
+            print(data)
+        return data  
+
 @register_tool('private_msg')
 class PrivateMsg(BaseTool):
     description = '私信发送服务, 输入目标用户昵称与内容, 返回状态码'
@@ -32,9 +71,12 @@ class PrivateMsg(BaseTool):
     def call(self, params: str, **kwargs) -> str: # type: ignore
         data = ''
         try:
-            user_id_dict = {"LUKAS": 1029797287, "фейерверк": 577913397, "^": 1163166910 }
+            user_id = 1029797287
             user_card = str(json5.loads(params)['user_card'])    # type: ignore  # noqa: F841
-            user_id = user_id_dict[user_card]
+            with open('SKA-main/Agent/prompt2.json', 'r', encoding='utf-8') as f:
+                user_id_dict = json5.load(f)
+                user_id = user_id_dict[user_card]
+                
             text = json5.loads(params)['text']  # type: ignore
             conn = http.client.HTTPConnection("127.0.0.1", 3000)
             payload = json.dumps({
@@ -153,7 +195,8 @@ def init_agent_service():
         },
         'code_interpreter',  # Built-in tools
         'private_msg',
-        'group_msg'
+        'group_msg',
+        'self_msg'
     ]
 
     """加载提示词模板"""
