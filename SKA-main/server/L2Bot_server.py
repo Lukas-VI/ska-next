@@ -15,6 +15,7 @@ class QQHttpServer():
         # asyncio.run(self.get_data())
         self.is_connected = False
         self.data_task = None  # 用于保存数据接收任务的引用
+        self.timeout = 30.0    # 添加超时参数，默认30秒
 
     '''    async def get_data(self):
         async with httpx.AsyncClient(timeout=None) as client:
@@ -109,8 +110,11 @@ class QQHttpServer():
                         }
                     ]
                 }
-            async with httpx.AsyncClient() as client:
+            # 使用类中定义的超时参数
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
                 await client.post(self.l2Bot_api+self.send_mode, json=j)
+        except httpx.TimeoutException:
+            print("发送消息超时")
         except Exception as e:
             print(f"发送消息失败: {str(e)}")
 

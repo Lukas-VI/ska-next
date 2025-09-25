@@ -218,12 +218,17 @@ class Core():
                 # 构造符合Qwen Agent要求的消息格式
                 self.msg_construct(input_msg)
                 
-                # 使用Qwen Agent处理消息
+                # 使用Qwen Agent处理消息，添加超时机制
                 response_plain_text = ''
                 # 转换消息格式以符合Qwen Agent的要求
-                for response in self.qwen_agent.run(messages=list(self.messages)):
-                    # 获取最后一次响应作为结果
-                    response_plain_text = response
+                print("start response")
+                # 为Qwen Agent调用添加超时机制
+                response = await asyncio.wait_for(
+                    self._run_qwen_agent(list(self.messages)),
+                    timeout=120.0  # 设置5分钟超时
+                )
+                # 获取最后一次响应作为结果
+                response_plain_text = response
                 
                 # 提取响应内容
                 if isinstance(response_plain_text, list) and len(response_plain_text) > 0:
@@ -257,12 +262,25 @@ class Core():
                 # 如果没有Qwen Agent，回退到基本工具链
                 # await self.basic_toolchain()
                 print("Agent_ERROR")
+        except asyncio.TimeoutError:
+            print("Qwen Agent调用超时，无法获取响应")
+            # 可以选择发送超时消息给用户
+            # await self.QQServer.send_text(CoreOutput("请求超时，请稍后再试", "text"))
         except Exception as e:
             print(f"Error in Qwen Agent toolchain: {e}")
             # 出错时回退到基本工具链
             # await self.basic_toolchain()
             
         self.task = None
+
+    async def _run_qwen_agent(self, messages):
+        """
+        运行Qwen Agent的内部方法，用于支持超时控制
+        """
+        response_plain_text = ''
+        # 转换消息格式以符合Qwen Agent的要求
+        response_plain_text = self.qwen_agent.run_nonstream(messages=list(self.messages)) # type: ignore
+        return response_plain_text
 
     async def agent_basic_toolchain(self):
         '''
