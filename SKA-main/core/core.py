@@ -350,7 +350,7 @@ class Core():
         if self.qwen_agent and self.prompt_template:
             return self.qwen_agent_toolchain
         else:
-            return self.basic_toolchain
+            return self.agent_basic_toolchain
             
     async def manage(self):
         """
