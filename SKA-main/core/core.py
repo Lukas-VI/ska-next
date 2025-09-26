@@ -240,14 +240,29 @@ class Core():
                 else:
                     result_content = str(response_plain_text)
                 
+                # 检查结果是否为空或无效
+                if not result_content or result_content.isspace():
+                    print("Qwen Agent返回空响应")
+                    # 可以选择发送默认消息给用户
+                    # await self.QQServer.send_text(CoreOutput("抱歉，我没有得到有效的回复。", "text"))
+                    return
+                
                 # 将assistant的回复添加到消息历史中
-                if result_content:
-                    self.messages.append({
-                        'role': 'assistant',
-                        'content': result_content
-                    })
-                self.Output = CoreOutput(json.loads(result_content), "LLM_response")
-                if self.Output.target == "private_msg" or "private_msg":
+                self.messages.append({
+                    'role': 'assistant',
+                    'content': result_content
+                })
+                
+                # 尝试解析JSON内容
+                try:
+                    output_data = json.loads(result_content)
+                    self.Output = CoreOutput(output_data, "LLM_response")
+                except json.JSONDecodeError as e:
+                    print(f"JSON解析错误: {e}")
+                    # 如果JSON解析失败，创建一个包含原始内容的输出对象
+                    self.Output = CoreOutput({"text": result_content}, "LLM_response")
+                
+                if self.Output.target == "private_msg" or self.Output.target == "group_msg":
                     # 如果Agent返回了结果，则发送结果
                     await self.QQServer.send_text(self.Output)
                 elif self.Output.target == 'internal':
@@ -268,6 +283,8 @@ class Core():
             # await self.QQServer.send_text(CoreOutput("请求超时，请稍后再试", "text"))
         except Exception as e:
             print(f"Error in Qwen Agent toolchain: {e}")
+            import traceback
+            traceback.print_exc()
             # 出错时回退到基本工具链
             # await self.basic_toolchain()
             
@@ -279,7 +296,7 @@ class Core():
         """
         response_plain_text = ''
         # 转换消息格式以符合Qwen Agent的要求
-        for response in self.qwen_agent.run(messages=list(self.messages)): # type: ignore
+        for response in self.qwen_agent.run(messages=messages):  # type: ignore # 修复：使用传入的messages参数
             # 获取最后一次响应作为结果
             response_plain_text = response        
         return response_plain_text
