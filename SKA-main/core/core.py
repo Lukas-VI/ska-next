@@ -225,7 +225,7 @@ class Core():
                 # 为Qwen Agent调用添加超时机制
                 response = await asyncio.wait_for(
                     self._run_qwen_agent(list(self.messages)),
-                    timeout=120.0  # 设置5分钟超时
+                    timeout=120.0  # 设置2分钟超时
                 )
                 # 获取最后一次响应作为结果
                 response_plain_text = response
@@ -279,7 +279,9 @@ class Core():
         """
         response_plain_text = ''
         # 转换消息格式以符合Qwen Agent的要求
-        response_plain_text = self.qwen_agent.run_nonstream(messages=list(self.messages)) # type: ignore
+        for response in self.qwen_agent.run(messages=list(self.messages)): # type: ignore
+            # 获取最后一次响应作为结果
+            response_plain_text = response        
         return response_plain_text
 
     async def agent_basic_toolchain(self):
