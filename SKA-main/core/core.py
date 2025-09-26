@@ -2,6 +2,7 @@ import sys
 import asyncio
 import signal
 import json  # noqa: F401
+import inspect
 
 from server.LLM.Ollama_API import OllamaAPI
 from server.L2Bot_server import QQHttpServer
@@ -142,21 +143,7 @@ class Core():
         if QWEN_AGENT_AVAILABLE:
             await self.qwen_agent_toolchain()
         else:
-            await self.basic_toolchain()
-
-    async def basic_toolchain(self):
-        '''
-        最基础的消息收发逻辑
-
-        未来将集成到工具类进行解耦
-        '''
-        # 获取当前函数名作为task值
-        self.task = sys._getframe().f_code.co_name
-        print(f"task: [{self.task}]")
-        self.Input = CoreInput(self.QQServer.recive_data, "qq_json")
-        self.output = CoreOutput(await self.Agent_API.ollama_chat(self.Input.content), "ollama_json")
-        await self.QQServer.send_text(self.output)
-        self.task = None
+            await self.agent_basic_toolchain()
 
     def msg_construct(self, input: CoreInput):
         """
@@ -175,37 +162,55 @@ class Core():
                 })
         
         # 添加用户消息
-        content = None
-        if input.source == "qq_message": 
-            content = {
-                "message_type": input.type,
-                "raw_message": input.content,
-                "card": input.card,
-                "time": input.time
-            }
-        elif input.source == "self_response":
-            content = {
-                "response": input.response
-            }
-        elif input.source == "system": 
-            content = {
-                "type": "system",
-                "event": input.event,
-                "task": input.content
-            }
-        if content is not None:
-            self.messages.append({
-                'role': 'user',
-                'content': str(content)
-            })
+        self.messages.append({
+            'role': 'user',
+            'content': input.content if hasattr(input, 'content') else str(input)
+        })
+        
+        # 限制消息历史记录长度，防止超出上下文长度限制
+        # 保留系统消息和最近的10轮对话（20条消息）
+        if len(self.messages) > 21:  # 1条系统消息 + 10轮对话(20条消息)
+            # 保留系统消息和最近的20条消息
+            system_message = self.messages[0] if self.messages[0]['role'] == 'system' else None
+            recent_messages = self.messages[-20:]  # 获取最近的20条消息
+            
+            if system_message:
+                self.messages = [system_message] + recent_messages
+            else:
+                self.messages = recent_messages
 
+    def _append_assistant_message(self, content):
+        """
+        添加assistant消息到历史记录并管理历史记录长度
+        
+        Args:
+            content: 消息内容
+        """
+        if content:
+            self.messages.append({
+                'role': 'assistant',
+                'content': content
+            })
+            
+            # 限制消息历史记录长度，防止超出上下文长度限制
+            # 保留系统消息和最近的10轮对话（20条消息）
+            if len(self.messages) > 21:  # 1条系统消息 + 10轮对话(20条消息)
+                # 保留系统消息和最近的20条消息
+                system_message = self.messages[0] if self.messages[0]['role'] == 'system' else None
+                recent_messages = self.messages[-20:]  # 获取最近的20条消息
+                
+                if system_message:
+                    self.messages = [system_message] + recent_messages
+                else:
+                    self.messages = recent_messages
 
     async def qwen_agent_toolchain(self):
         '''
         使用Qwen Agent的消息处理逻辑
         '''
         # 获取当前函数名作为task值
-        self.task = sys._getframe().f_code.co_name
+        frame = inspect.currentframe()
+        self.task = frame.f_code.co_name if frame else "qwen_agent_toolchain"
         print(f"task: [{self.task}]")
         
         try:
@@ -244,14 +249,11 @@ class Core():
                 if not result_content or result_content.isspace():
                     print("Qwen Agent返回空响应")
                     # 可以选择发送默认消息给用户
-                    # await self.QQServer.send_text(CoreOutput("抱歉，我没有得到有效的回复。", "text"))
+                    await self.QQServer.send_text(CoreOutput("我说不了话", "text"))
                     return
                 
-                # 将assistant的回复添加到消息历史中
-                self.messages.append({
-                    'role': 'assistant',
-                    'content': result_content
-                })
+                # 将assistant的回复添加到消息历史中并管理历史记录长度
+                self._append_assistant_message(result_content)
                 
                 # 尝试解析JSON内容
                 try:
@@ -272,7 +274,7 @@ class Core():
                     self.Input = CoreInput(pack, "LLM_response")
                 else:
                     # 如果没有结果，回退到基本工具链
-                    await self.basic_toolchain()
+                    await self.agent_basic_toolchain()
             else:
                 # 如果没有Qwen Agent，回退到基本工具链
                 # await self.basic_toolchain()
