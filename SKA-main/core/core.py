@@ -16,6 +16,7 @@ from events.e_Scheduler import Scheduler
 # 导入Qwen Agent相关模块
 try:
     from Agent.Kynia_qwen import init_agent_service
+    from qwen_agent.utils.output_beautify import typewriter_print
     QWEN_AGENT_AVAILABLE = True
 except ImportError:
     QWEN_AGENT_AVAILABLE = False
@@ -239,7 +240,7 @@ class Core():
                 if isinstance(response_plain_text, list) and len(response_plain_text) > 0:
                     result = response_plain_text[-1]  # 获取最后一个响应
                     if isinstance(result, dict) and 'content' in result:
-                        result_content = result['content']
+                        result_content = result['content'] # type: ignore
                     else:
                         result_content = str(result)
                 else:
@@ -298,9 +299,9 @@ class Core():
         """
         response_plain_text = ''
         # 转换消息格式以符合Qwen Agent的要求
-        for response in self.qwen_agent.run(messages=messages):  # type: ignore # 修复：使用传入的messages参数
-            # 获取最后一次响应作为结果
-            response_plain_text = response        
+        for response in self.qwen_agent.run(messages=messages): # type: ignore
+            response_plain_text = typewriter_print(response, response_plain_text) # type: ignore
+        print(response)         # type: ignore
         return response_plain_text
 
     async def agent_basic_toolchain(self):
