@@ -171,7 +171,11 @@ def init_agent_service():
                  "howtocook-mcp": {
                     "args": ["-y","howtocook-mcp"],
                     "command": "npx"
-                }
+                }, 
+                "calculator": {
+                    "args": ["mcp-calculator"],
+                    "command": "npx"
+                    }
             }
         },
         'code_interpreter',  # Built-in tools

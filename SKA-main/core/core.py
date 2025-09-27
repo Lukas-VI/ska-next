@@ -146,43 +146,55 @@ class Core():
         else:
             await self.agent_basic_toolchain()
 
-    def msg_construct(self, input: CoreInput):
+    def input_msg_construct(self, input: CoreInput):
         """
         添加一条信息来自input
         
         Args:
-            input: CoreInput对象，包含输入的消息数据
+            input: CoreInput对象，包含此次输入的消息数据
         """
-        # 如果messages为空，添加系统提示
-        if not self.messages:
-            # 检查是否有加载的提示词模板
-            if hasattr(self, 'prompt_template') and self.prompt_template:
-                self.messages.append({
-                    'role': 'system', 
-                    'content': self.prompt_template
-                })
+        # # 如果messages为空，添加系统提示
+        # if not self.messages:
+        #     # 检查是否有加载的提示词模板
+        #     if hasattr(self, 'prompt_template') and self.prompt_template:
+        #         self.messages.append({
+        #             'role': 'system', 
+        #             'content': self.prompt_template
+        #         })
         
         # 添加用户消息
+        if input.type == "system_event":
+            j = {
+              "type": "system_event",
+              "event": self.event,
+              "task": self.task
+            }
+        else:
+            j = {
+                "message_type": input.type,
+                "card": input.user,
+                "raw_message": input.content,
+            }
         self.messages.append({
             'role': 'user',
-            'content': input.content if hasattr(input, 'content') else str(input)
+            'content': str(j)
         })
         
-        # 限制消息历史记录长度，防止超出上下文长度限制
-        # 保留系统消息和最近的10轮对话（20条消息）
-        if len(self.messages) > 21:  # 1条系统消息 + 10轮对话(20条消息)
-            # 保留系统消息和最近的20条消息
-            system_message = self.messages[0] if self.messages[0]['role'] == 'system' else None
-            recent_messages = self.messages[-20:]  # 获取最近的20条消息
+        # # 限制消息历史记录长度，防止超出上下文长度限制
+        # # 保留系统消息和最近的10轮对话（20条消息）
+        # if len(self.messages) > 21:  # 1条系统消息 + 10轮对话(20条消息)
+        #     # 保留系统消息和最近的20条消息
+        #     system_message = self.messages[0] if self.messages[0]['role'] == 'system' else None
+        #     recent_messages = self.messages[-20:]  # 获取最近的20条消息
             
-            if system_message:
-                self.messages = [system_message] + recent_messages
-            else:
-                self.messages = recent_messages
+        #     if system_message:
+        #         self.messages = [system_message] + recent_messages
+        #     else:
+        #         self.messages = recent_messages
 
     def _append_assistant_message(self, content):
         """
-        添加assistant消息到历史记录并管理历史记录长度
+        添加assistant输出的消息到历史记录
         
         Args:
             content: 消息内容
@@ -195,15 +207,15 @@ class Core():
             
             # 限制消息历史记录长度，防止超出上下文长度限制
             # 保留系统消息和最近的10轮对话（20条消息）
-            if len(self.messages) > 21:  # 1条系统消息 + 10轮对话(20条消息)
-                # 保留系统消息和最近的20条消息
-                system_message = self.messages[0] if self.messages[0]['role'] == 'system' else None
-                recent_messages = self.messages[-20:]  # 获取最近的20条消息
+            # if len(self.messages) > 21:  # 1条系统消息 + 10轮对话(20条消息)
+            #     # 保留系统消息和最近的20条消息
+            #     system_message = self.messages[0] if self.messages[0]['role'] == 'system' else None
+            #     recent_messages = self.messages[-20:]  # 获取最近的20条消息
                 
-                if system_message:
-                    self.messages = [system_message] + recent_messages
-                else:
-                    self.messages = recent_messages
+            #     if system_message:
+            #         self.messages = [system_message] + recent_messages
+            #     else:
+            #         self.messages = recent_messages
 
     async def qwen_agent_toolchain(self):
         '''
@@ -215,71 +227,53 @@ class Core():
         print(f"task: [{self.task}]")
         
         try:
-            # 使用Qwen Agent处理消息
-            if self.qwen_agent is not None:
-                # 从QQ服务器获取消息内容
-                input_msg = self.Input
-                if self.QQServer.recive_data:
-                    input_msg = CoreInput(self.QQServer.recive_data, "qq_json")
-                # 构造符合Qwen Agent要求的消息格式
-                self.msg_construct(input_msg)
-                
-                # 使用Qwen Agent处理消息，添加超时机制
-                response_plain_text = ''
-                # 转换消息格式以符合Qwen Agent的要求
-                print("start response")
-                # 为Qwen Agent调用添加超时机制
-                response = await asyncio.wait_for(
-                    self._run_qwen_agent(list(self.messages)),
-                    timeout=120.0  # 设置2分钟超时
-                )
-                # 获取最后一次响应作为结果
-                response_plain_text = response
-                
-                # 提取响应内容
-                if isinstance(response_plain_text, list) and len(response_plain_text) > 0:
-                    result = response_plain_text[-1]  # 获取最后一个响应
-                    if isinstance(result, dict) and 'content' in result:
-                        result_content = result['content'] # type: ignore
-                    else:
-                        result_content = str(result)
-                else:
-                    result_content = str(response_plain_text)
-                
-                # 检查结果是否为空或无效
-                if not result_content or result_content.isspace():
-                    print("Qwen Agent返回空响应")
-                    # 可以选择发送默认消息给用户
-                    await self.QQServer.send_text(CoreOutput("我说不了话", "text"))
-                    return
-                
-                # 将assistant的回复添加到消息历史中并管理历史记录长度
-                self._append_assistant_message(result_content)
-                
-                # 尝试解析JSON内容
-                try:
-                    output_data = json.loads(result_content)
-                    self.Output = CoreOutput(output_data, "LLM_response")
-                except json.JSONDecodeError as e:
-                    print(f"JSON解析错误: {e}")
-                    # 如果JSON解析失败，创建一个包含原始内容的输出对象
-                    self.Output = CoreOutput({"text": result_content}, "LLM_response")
-                
-                if self.Output.target == "private_msg" or self.Output.target == "group_msg":
-                    # 如果Agent返回了结果，则发送结果
-                    await self.QQServer.send_text(self.Output)
-                elif self.Output.target == 'internal':
-                    pack = {
-                        "response": self.Output.content
-                    }
-                    self.Input = CoreInput(pack, "LLM_response")
-                else:
-                    # 如果没有结果，回退到基本工具链
-                    await self.agent_basic_toolchain()
-            else:
-                # 如果没有Qwen Agent，回退到基本工具链
-                # await self.basic_toolchain()
-                print("Agent_ERROR")
+            # 从QQ服务器获取消息内容
+            input_msg = self.Input
+            if self.QQServer.recive_data:
+                input_msg = CoreInput(self.QQServer.recive_data, "qq_json")
+            # 构造符合Qwen Agent要求的消息格式
+            self.input_msg_construct(input_msg)
+            
+            # 使用Qwen Agent处理消息，添加超时机制
+            response_plain_text = ''
+            # 转换消息格式以符合Qwen Agent的要求
+            print("start response")
+            # 为Qwen Agent调用添加超时机制
+            response = await asyncio.wait_for(
+                self._run_qwen_agent(list(self.messages)),
+                timeout=120.0  # 设置2分钟超时
+            )
+            # 获取最后一次响应作为结果
+            response_plain_text = response
+            
+            
+            
+            # 检查结果是否为空或无效
+            if not response_plain_text or response_plain_text.isspace():
+                print("Qwen Agent返回空响应")
+                # 可以选择发送默认消息给用户
+                await self.QQServer.send_text(CoreOutput("我说不了话", "text"))
+                return
+            
+            # 尝试解析JSON内容
+            try:
+                output_data = json.loads(response_plain_text)
+                self.Output = CoreOutput(output_data, "LLM_response")
+            except json.JSONDecodeError as e:
+                print(f"JSON解析错误: {e}")
+                # 如果JSON解析失败，创建一个包含原始内容的输出对象
+                self.Output = CoreOutput({"text": response_plain_text}, "LLM_response")
+            
+            #发送尾随消息
+            if self.Output.target == "private_msg" or self.Output.target == "group_msg":
+                # 如果Agent返回了结果，则发送结果
+                await self.QQServer.send_text(self.Output)
+            elif self.Output.target == 'internal':
+                j = {
+                    "response": self.Output.content
+                }
+                self._append_assistant_message(str(j))
+
         except asyncio.TimeoutError:
             print("Qwen Agent调用超时，无法获取响应")
             # 可以选择发送超时消息给用户
