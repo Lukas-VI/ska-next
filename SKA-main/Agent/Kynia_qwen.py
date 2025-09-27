@@ -54,10 +54,10 @@ class QQMessageSender(BaseTool):
             # 过滤消息内容
             filtered_text = self.message_filter.filter_message(text)
             
-            # 检查是否包含违禁内容
-            if self.message_filter.contains_banned_content(text):
-                print("消息包含违禁内容，已过滤")
-                filtered_text = "[消息包含敏感内容，已被过滤]"
+            # # 检查是否包含违禁内容
+            # if self.message_filter.contains_banned_content(text):
+            #     print("消息包含违禁内容，已过滤")
+            #     filtered_text = "[消息包含敏感内容，已被过滤]"
             
             conn = http.client.HTTPConnection("127.0.0.1", 3000)
             headers = {'Content-Type': 'application/json'}
