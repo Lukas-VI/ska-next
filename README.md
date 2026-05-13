@@ -3,6 +3,10 @@
 ## 介绍
 瞎写的泛用型自律机器人
 
+## 致谢与参考
+
+旧 `main`（现 `legacy-main`）与当前实现都参考了社区中关于聊天机器人、LLM Agent、OpenAI-compatible API、MCP 工具调用和异步服务编排的方案。已知来源与依赖生态见 [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md)。
+
 ## 软件架构
 软件架构计划说明
 技术：

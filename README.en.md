@@ -3,6 +3,10 @@
 #### Description
 及百家之长的泛用型聊天机器人
 
+#### Acknowledgements
+
+The early `main` branch, now preserved as `legacy-main`, and the current implementation both refer to community solutions around chat bots, LLM agents, OpenAI-compatible APIs, MCP tool calling, and async service orchestration. Known references and dependency credits are listed in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
+
 #### Software Architecture
 Software architecture description
 
